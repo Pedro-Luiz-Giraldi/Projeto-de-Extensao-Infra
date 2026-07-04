@@ -1,0 +1,55 @@
+name: sax
+services:
+
+  database:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    networks:
+      - sax-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      retries: 10
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      - DB_HOST=${DB_HOST}
+      - OTEL_JAVAAGENT_DEBUG=true
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+    ports:
+      - "8081:8081"
+    expose:
+      - 8081
+    networks:
+      - sax-net
+    command: ["-javaagent:./opentelemetry-javaagent.jar"]
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command:
+      - "--config=/etc/otelcol/config.yaml"
+    volumes:
+      - ./otel-collector/config.yaml:/etc/otelcol/config.yaml
+    ports:
+      - "55679:55679"
+      - "4317:4317"
+      - "4318:4318"
+    expose:
+      - 55679
+    networks:
+      - sax-net
+
+networks:
+  sax-net:
+    driver: bridge

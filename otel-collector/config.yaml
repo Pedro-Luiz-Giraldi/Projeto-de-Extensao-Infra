@@ -9,6 +9,10 @@ receivers:
 exporters:
   debug:
     verbosity: detailed
+  otlp_http:
+    endpoint: http://tempo:4318
+    tls:
+      insecure: true
 
 extensions:
   zpages:
@@ -19,4 +23,4 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [debug]
+      exporters: [debug, otlp_http]

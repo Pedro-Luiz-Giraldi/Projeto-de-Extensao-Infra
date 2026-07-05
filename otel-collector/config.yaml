@@ -9,8 +9,12 @@ receivers:
 exporters:
   debug:
     verbosity: detailed
-  otlp_http:
+  otlphttp/tempo:
     endpoint: http://tempo:4318
+    tls:
+      insecure: true
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
     tls:
       insecure: true
 
@@ -23,4 +27,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [debug, otlp_http]
+      exporters: [otlphttp/tempo, debug]
+    logs:
+      receivers: [otlp]
+      exporters: [otlphttp/loki, debug]

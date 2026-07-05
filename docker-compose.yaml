@@ -27,6 +27,7 @@ services:
       - DB_HOST=${DB_HOST}
       - OTEL_JAVAAGENT_DEBUG=true
       - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=otlp
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
     ports:
       - "8081:8081"
@@ -54,6 +55,19 @@ services:
     command: ["-target=all", "-config.file=/etc/tempo.yaml"]
     volumes:
       - ./tempo/tempo.yaml:/etc/tempo.yaml
+    networks:
+      - sax-net
+
+  loki:
+    image: grafana/loki:3.7.0
+    command: "-target=all -config.expand-env=true"
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml
+    ports:
+      - "3100:3100"
+    entrypoint:
+      - /usr/bin/loki
+      - -config.file=/etc/loki/local-config.yaml
     networks:
       - sax-net
 

@@ -17,6 +17,8 @@ exporters:
     endpoint: http://loki:3100/otlp
     tls:
       insecure: true
+  otlphttp/prom:
+    endpoint: http://prometheus:9090/api/v1/otlp
 
 extensions:
   zpages:
@@ -31,3 +33,6 @@ service:
     logs:
       receivers: [otlp]
       exporters: [otlphttp/loki, debug]
+    metrics:
+      receivers: [otlp]
+      exporters: [otlphttp/prom, debug]

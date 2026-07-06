@@ -28,6 +28,8 @@ services:
       - OTEL_JAVAAGENT_DEBUG=true
       - OTEL_TRACES_EXPORTER=otlp
       - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_METRIC_EXPORT_INTERVAL=15000
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
     ports:
       - "8081:8081"
@@ -36,6 +38,14 @@ services:
     networks:
       - sax-net
 
+  frontend:
+    image: pedrogiraldi/sax-frontend:latest
+    ports:
+      - "80:80"
+    expose:
+      - 80
+    networks:
+      - sax-net
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
@@ -68,6 +78,14 @@ services:
     entrypoint:
       - /usr/bin/loki
       - -config.file=/etc/loki/local-config.yaml
+    networks:
+      - sax-net
+
+  prometheus:
+    image: prom/prometheus:v3
+    command: "--web.enable-otlp-receiver --config.file=/etc/prometheus.yaml"
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus.yaml
     networks:
       - sax-net
 

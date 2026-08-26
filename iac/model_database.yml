@@ -1,0 +1,139 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CloudFormation Template for DataBase Components (RDS and S3 - Datalake)
+
+Parameters:
+  DBUsername:
+    Description: Usuario master do banco de dados RDS
+    Type: String
+    Default: dbadmin
+    MinLength: "4"
+    MaxLength: "16"
+    AllowedPattern: "^[a-zA-Z][a-zA-Z0-9]*$"
+
+  DBPassword:
+    Description: Senha master do banco de dados RDS
+    Type: String
+    NoEcho: true
+    MinLength: "8"
+    MaxLength: "41"
+    Default: AdminPassword123!
+
+Resources:
+  # Stack - Bucket (Logs and Datalake) and RDS
+  LogBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Name
+          Value: S3-Registros-de-Logs
+        - Key: Purpose
+          Value: Logs
+
+  DataLakeBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Name
+          Value: S3-DataLake
+        - Key: Purpose
+          Value: DataLake
+
+  RDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnets privadas utilizadas pelo RDS
+      SubnetIds:
+        - Fn::ImportValue: Network-PrivateSubnet1Id
+        - Fn::ImportValue: Network-PrivateSubnet2Id
+      Tags:
+        - Key: Name
+          Value: RDS-SubnetGroup
+
+  RDSDatabase:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: banco-principal
+      Engine: mysql
+      EngineVersion: "8.4"
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      StorageType: gp3
+      StorageEncrypted: true
+      DBName: appdb
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      VPCSecurityGroups:
+        - Fn::ImportValue: Network-DBSecurityGroupId
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+      MultiAZ: false
+      DeletionProtection: false
+      Tags:
+        - Key: Name
+          Value: RDS-Banco-Principal
+
+Outputs:
+  LogBucketName:
+    Description: Nome do bucket utilizado para armazenamento de logs
+    Value: !Ref LogBucket
+    Export:
+      Name: Database-LogBucketName
+
+  LogBucketArn:
+    Description: ARN do bucket de logs
+    Value: !GetAtt LogBucket.Arn
+    Export:
+      Name: Database-LogBucketArn
+
+  DataLakeBucketName:
+    Description: Nome do bucket utilizado como Data Lake
+    Value: !Ref DataLakeBucket
+    Export:
+      Name: Database-DataLakeBucketName
+
+  DataLakeBucketArn:
+    Description: ARN do bucket Data Lake
+    Value: !GetAtt DataLakeBucket.Arn
+    Export:
+      Name: Database-DataLakeBucketArn
+
+  RDSInstanceIdentifier:
+    Description: Identificador da instancia RDS
+    Value: !Ref RDSDatabase
+    Export:
+      Name: Database-RDSInstanceIdentifier
+
+  RDSEndpoint:
+    Description: Endpoint do banco de dados RDS
+    Value: !GetAtt RDSDatabase.Endpoint.Address
+    Export:
+      Name: Database-RDSEndpoint
+
+  RDSPort:
+    Description: Porta utilizada pelo RDS
+    Value: !GetAtt RDSDatabase.Endpoint.Port
+    Export:
+      Name: Database-RDSPort

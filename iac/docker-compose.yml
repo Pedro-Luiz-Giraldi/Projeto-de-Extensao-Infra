@@ -1,0 +1,15 @@
+# docker-compose.yml
+services:
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    ports:
+      - "4566:4566"
+      - "4571:4571"
+    environment:
+      - SERVICES=ec2,elbv2,s3,lambda,iam,sts
+      - DEBUG=1
+      - PERSISTENCE=1
+      - LOCALSTACK_API_KEY=minha-chave
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

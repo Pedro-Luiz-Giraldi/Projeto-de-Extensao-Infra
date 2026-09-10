@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: CloudFormation Template for DataBase Components (RDS and S3 - Datalake)
+Description: CloudFormation Template for DataBase Components (RDS and S3 - DataLake)
 
 Parameters:
   DBUsername:
@@ -19,7 +19,11 @@ Parameters:
     Default: AdminPassword123!
 
 Resources:
-  # Stack - Bucket (Logs and Datalake) and RDS
+
+  # =========================================================
+  # S3 - LOGS
+  # =========================================================
+
   LogBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -27,38 +31,116 @@ Resources:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
+
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+
       VersioningConfiguration:
         Status: Enabled
+
       Tags:
         - Key: Name
           Value: S3-Registros-de-Logs
         - Key: Purpose
           Value: Logs
 
-  DataLakeBucket:
+
+  # =========================================================
+  # S3 - DATALAKE BRONZE
+  # =========================================================
+
+  BronzeBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
+
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+
       VersioningConfiguration:
         Status: Enabled
+
       Tags:
         - Key: Name
-          Value: S3-DataLake
+          Value: S3-DataLake-Bronze
         - Key: Purpose
-          Value: DataLake
+          Value: DataLake-Bronze
+        - Key: Layer
+          Value: Bronze
+
+
+  # =========================================================
+  # S3 - DATALAKE SILVER
+  # =========================================================
+
+  SilverBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+      VersioningConfiguration:
+        Status: Enabled
+
+      Tags:
+        - Key: Name
+          Value: S3-DataLake-Silver
+        - Key: Purpose
+          Value: DataLake-Silver
+        - Key: Layer
+          Value: Silver
+
+
+  # =========================================================
+  # S3 - DATALAKE GOLD
+  # =========================================================
+
+  GoldBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+      VersioningConfiguration:
+        Status: Enabled
+
+      Tags:
+        - Key: Name
+          Value: S3-DataLake-Gold
+        - Key: Purpose
+          Value: DataLake-Gold
+        - Key: Layer
+          Value: Gold
+
+
+  # =========================================================
+  # RDS SUBNET GROUP
+  # =========================================================
 
   RDSSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
@@ -67,9 +149,15 @@ Resources:
       SubnetIds:
         - Fn::ImportValue: Network-PrivateSubnet1Id
         - Fn::ImportValue: Network-PrivateSubnet2Id
+
       Tags:
         - Key: Name
           Value: RDS-SubnetGroup
+
+
+  # =========================================================
+  # RDS DATABASE
+  # =========================================================
 
   RDSDatabase:
     Type: AWS::RDS::DBInstance
@@ -82,20 +170,34 @@ Resources:
       StorageType: gp3
       StorageEncrypted: true
       DBName: appdb
+
       MasterUsername: !Ref DBUsername
       MasterUserPassword: !Ref DBPassword
+
       VPCSecurityGroups:
         - Fn::ImportValue: Network-DBSecurityGroupId
+
       DBSubnetGroupName: !Ref RDSSubnetGroup
       PubliclyAccessible: false
       BackupRetentionPeriod: 7
       MultiAZ: false
       DeletionProtection: false
+
       Tags:
         - Key: Name
           Value: RDS-Banco-Principal
 
+
+# =========================================================
+# OUTPUTS
+# =========================================================
+
 Outputs:
+
+  # -------------------------
+  # LOG BUCKET
+  # -------------------------
+
   LogBucketName:
     Description: Nome do bucket utilizado para armazenamento de logs
     Value: !Ref LogBucket
@@ -108,17 +210,61 @@ Outputs:
     Export:
       Name: Database-LogBucketArn
 
-  DataLakeBucketName:
-    Description: Nome do bucket utilizado como Data Lake
-    Value: !Ref DataLakeBucket
-    Export:
-      Name: Database-DataLakeBucketName
 
-  DataLakeBucketArn:
-    Description: ARN do bucket Data Lake
-    Value: !GetAtt DataLakeBucket.Arn
+  # -------------------------
+  # BRONZE
+  # -------------------------
+
+  BronzeBucketName:
+    Description: Nome do bucket DataLake Bronze
+    Value: !Ref BronzeBucket
     Export:
-      Name: Database-DataLakeBucketArn
+      Name: Database-BronzeBucketName
+
+  BronzeBucketArn:
+    Description: ARN do bucket DataLake Bronze
+    Value: !GetAtt BronzeBucket.Arn
+    Export:
+      Name: Database-BronzeBucketArn
+
+
+  # -------------------------
+  # SILVER
+  # -------------------------
+
+  SilverBucketName:
+    Description: Nome do bucket DataLake Silver
+    Value: !Ref SilverBucket
+    Export:
+      Name: Database-SilverBucketName
+
+  SilverBucketArn:
+    Description: ARN do bucket DataLake Silver
+    Value: !GetAtt SilverBucket.Arn
+    Export:
+      Name: Database-SilverBucketArn
+
+
+  # -------------------------
+  # GOLD
+  # -------------------------
+
+  GoldBucketName:
+    Description: Nome do bucket DataLake Gold
+    Value: !Ref GoldBucket
+    Export:
+      Name: Database-GoldBucketName
+
+  GoldBucketArn:
+    Description: ARN do bucket DataLake Gold
+    Value: !GetAtt GoldBucket.Arn
+    Export:
+      Name: Database-GoldBucketArn
+
+
+  # -------------------------
+  # RDS
+  # -------------------------
 
   RDSInstanceIdentifier:
     Description: Identificador da instancia RDS

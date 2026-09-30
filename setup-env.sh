@@ -1,0 +1,5 @@
+export MYSQL_ROOT_PASSWORD=1234
+export DB_USERNAME=root
+export DB_PASSWORD=1234
+export DB_HOST=
+export RABBIT_HOST=

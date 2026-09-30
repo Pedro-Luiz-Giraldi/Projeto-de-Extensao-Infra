@@ -1,0 +1,120 @@
+name: sax
+services:
+
+  database:
+    image: pedrogiraldi/sax-db:3.0-seed
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    networks:
+      - sax-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      retries: 10
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == worker
+      restart_policy:
+        condition: on-failure
+
+  backend:
+    image: pedrogiraldi/sax-back:1.0
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "8081:8081"
+    expose:
+      - 8081
+    networks:
+      - sax-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/v1/solicitacoes"]
+      retries: 10
+    deploy:
+      mode: replicated
+      replicas: 2
+      placement:
+        constraints:
+          - node.role == worker
+      restart_policy:
+        condition: on-failure
+
+  frontend:
+    image: pedrogiraldi/sax-frontend:latest
+    ports:
+      - "80:80"
+    expose:
+      - 80
+    networks:
+      - sax-net
+    deploy:
+      mode: replicated
+      replicas: 2
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    networks:
+      - sax-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == worker
+      restart_policy:
+        condition: on-failure
+
+  alertas:
+    image: pedrogiraldi/sax-alertas:1.0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    environment:
+      - MONOLITO_URL=http://backend:8081
+      - RABBIT_HOST=${RABBIT_HOST}
+    ports:
+      - "8082:8082"
+    expose:
+      - 8082
+    networks:
+      - sax-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == worker
+      restart_policy:
+        condition: on-failure
+
+
+networks:
+  sax-net:
+    driver: overlay

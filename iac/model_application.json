@@ -1,0 +1,240 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "CloudFormation Template for Application Components (WebServers, Load Balancer and BackEndServers)",
+  "Parameters": {
+    "InstanceType": {
+      "Description": "Tipo de instancia EC2 para os servidores Web e Back-End",
+      "Type": "String",
+      "Default": "t3.micro",
+      "AllowedValues": [
+        "t3.micro",
+        "t2.micro",
+        "t3.small"
+      ],
+      "ConstraintDescription": "Deve ser um tipo de instancia valido."
+    },
+    "AmiId": {
+      "Description": "ID da AMI (Amazon Linux 2023 em us-east-1)",
+      "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+      "Default": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
+    }
+  },
+  "Resources": {
+    "ApplicationLoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Name": "ALB-Publico",
+        "Scheme": "internet-facing",
+        "Type": "application",
+        "Subnets": [
+          {
+            "Fn::ImportValue": "Network-PublicSubnet1Id"
+          },
+          {
+            "Fn::ImportValue": "Network-PublicSubnet2Id"
+          }
+        ],
+        "SecurityGroups": [
+          {
+            "Fn::ImportValue": "Network-ALBSecurityGroupId"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "ALB-Publico"
+          }
+        ]
+      }
+    },
+    "ALBTargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Name": "TG-WebServers",
+        "Port": 80,
+        "Protocol": "HTTP",
+        "VpcId": {
+          "Fn::ImportValue": "Network-VPCId"
+        },
+        "HealthCheckPath": "/",
+        "HealthCheckIntervalSeconds": 30,
+        "Targets": [
+          {
+            "Id": {
+              "Ref": "WebServer01"
+            },
+            "Port": 80
+          },
+          {
+            "Id": {
+              "Ref": "WebServer02"
+            },
+            "Port": 80
+          }
+        ]
+      }
+    },
+    "ALBListener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "ALBTargetGroup"
+            }
+          }
+        ],
+        "LoadBalancerArn": {
+          "Ref": "ApplicationLoadBalancer"
+        },
+        "Port": 80,
+        "Protocol": "HTTP"
+      }
+    },
+    "WebServer01": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AmiId"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "SubnetId": {
+          "Fn::ImportValue": "Network-PublicSubnet1Id"
+        },
+        "SecurityGroupIds": [
+          {
+            "Fn::ImportValue": "Network-WebServerSecurityGroupId"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash\ndnf update -y\ndnf install -y httpd\nsystemctl start httpd\nsystemctl enable httpd\necho \"<h1>Web-Server 01 (us-east-1a)</h1>\" > /var/www/html/index.html\n"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Web-Server 01"
+          }
+        ]
+      }
+    },
+    "WebServer02": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AmiId"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "SubnetId": {
+          "Fn::ImportValue": "Network-PublicSubnet2Id"
+        },
+        "SecurityGroupIds": [
+          {
+            "Fn::ImportValue": "Network-WebServerSecurityGroupId"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash\ndnf update -y\ndnf install -y httpd\nsystemctl start httpd\nsystemctl enable httpd\necho \"<h1>Web-Server 02 (us-east-1b)</h1>\" > /var/www/html/index.html\n"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Web-Server 02"
+          }
+        ]
+      }
+    },
+    "Backend01": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AmiId"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "SubnetId": {
+          "Fn::ImportValue": "Network-PrivateSubnet1Id"
+        },
+        "SecurityGroupIds": [
+          {
+            "Fn::ImportValue": "Network-BackendSecurityGroupId"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash\ndnf update -y\ndnf install -y java-17-amazon-corretto\n"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Back-End 01 (us-east-1a)"
+          }
+        ]
+      }
+    },
+    "Backend02": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AmiId"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "SubnetId": {
+          "Fn::ImportValue": "Network-PrivateSubnet2Id"
+        },
+        "SecurityGroupIds": [
+          {
+            "Fn::ImportValue": "Network-BackendSecurityGroupId"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash\ndnf update -y\ndnf install -y java-17-amazon-corretto\n"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Back-End 02 (us-east-1b)"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "LoadBalancerDNS": {
+      "Description": "URL publica do Application Load Balancer",
+      "Value": {
+        "Fn::Sub": "http://${ApplicationLoadBalancer.DNSName}"
+      }
+    },
+    "WebServer01Id": {
+      "Description": "ID da instancia Web Server 01",
+      "Value": {
+        "Ref": "WebServer01"
+      }
+    },
+    "WebServer02Id": {
+      "Description": "ID da instancia Web Server 02",
+      "Value": {
+        "Ref": "WebServer02"
+      }
+    },
+    "Backend01Id": {
+      "Description": "ID da instancia Backend 01",
+      "Value": {
+        "Ref": "Backend01"
+      }
+    },
+    "Backend02Id": {
+      "Description": "ID da instancia Backend 02",
+      "Value": {
+        "Ref": "Backend02"
+      }
+    }
+  }
+}

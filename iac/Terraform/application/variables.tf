@@ -50,7 +50,13 @@ variable "instance_type" {
 }
 
 variable "ami_id" {
-  description = "Nome do parametro SSM da AMI Amazon Linux 2023 em us-east-1"
+  description = "Nome do parametro SSM da AMI Ubuntu 24.04 LTS em us-east-1"
   type        = string
-  default     = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
+  default     = "/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id"
+}
+
+variable "key_name" {
+  description = "Nome do KeyPair para acesso SSH as instancias"
+  type        = string
+  default     = "vockey"
 }

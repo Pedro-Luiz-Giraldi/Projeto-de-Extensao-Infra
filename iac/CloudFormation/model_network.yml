@@ -248,19 +248,27 @@ Resources:
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: SG para o Banco de Dados RDS
+      GroupDescription: SG para o Servidor de Banco de Dados MySQL (EC2)
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
           SourceSecurityGroupId: !Ref BackendSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref WebServerSecurityGroup
       SecurityGroupEgress:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: SG-RDS-Database
+          Value: SG-EC2-Database
+        - Key: Project
+          Value: Projeto-Extensao
+        - Key: Environment
+          Value: Production
 
 # ---------------------- Setando Parâmetros de Conexão ---------------------
 Outputs:
@@ -313,7 +321,7 @@ Outputs:
       Name: Network-BackendSecurityGroupId
 
   DBSecurityGroupId:
-    Description: Security Group do RDS
+    Description: Security Group do Servidor de Banco de Dados MySQL
     Value: !Ref DBSecurityGroup
     Export:
       Name: Network-DBSecurityGroupId

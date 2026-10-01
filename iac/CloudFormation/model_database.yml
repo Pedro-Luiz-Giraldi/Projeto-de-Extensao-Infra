@@ -1,9 +1,29 @@
-AWSTemplateFormatVersion: 2010-09-09
-Description: CloudFormation Template for DataBase Components (RDS and S3 - DataLake)
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation Template for DataBase Components (EC2 MySQL and S3 DataLake)
 
 Parameters:
+  InstanceType:
+    Description: Tipo de instancia EC2 para o servidor MySQL
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t3.medium
+    ConstraintDescription: Deve ser um tipo de instancia valido.
+
+  AmiId:
+    Description: ID da AMI do Ubuntu 24.04 LTS (us-east-1)
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+
+  KeyName:
+    Description: Nome do KeyPair para acesso SSH a instancia
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: vockey
+
   DBUsername:
-    Description: Usuario master do banco de dados RDS
+    Description: Usuario master do banco de dados MySQL
     Type: String
     Default: dbadmin
     MinLength: "4"
@@ -11,12 +31,17 @@ Parameters:
     AllowedPattern: "^[a-zA-Z][a-zA-Z0-9]*$"
 
   DBPassword:
-    Description: Senha master do banco de dados RDS
+    Description: Senha master do banco de dados MySQL
     Type: String
     NoEcho: true
     MinLength: "8"
     MaxLength: "41"
     Default: AdminPassword123!
+
+  DBName:
+    Description: Nome do banco de dados inicial
+    Type: String
+    Default: appdb
 
 Resources:
 
@@ -46,7 +71,8 @@ Resources:
           Value: S3-Registros-de-Logs
         - Key: Purpose
           Value: Logs
-
+        - Key: Project
+          Value: Projeto-Extensao
 
   # =========================================================
   # S3 - DATALAKE BRONZE
@@ -76,7 +102,8 @@ Resources:
           Value: DataLake-Bronze
         - Key: Layer
           Value: Bronze
-
+        - Key: Project
+          Value: Projeto-Extensao
 
   # =========================================================
   # S3 - DATALAKE SILVER
@@ -106,7 +133,8 @@ Resources:
           Value: DataLake-Silver
         - Key: Layer
           Value: Silver
-
+        - Key: Project
+          Value: Projeto-Extensao
 
   # =========================================================
   # S3 - DATALAKE GOLD
@@ -136,57 +164,80 @@ Resources:
           Value: DataLake-Gold
         - Key: Layer
           Value: Gold
-
+        - Key: Project
+          Value: Projeto-Extensao
 
   # =========================================================
-  # RDS SUBNET GROUP
+  # DATABASE INSTANCE (EC2 - Ubuntu 24.04 com MySQL nativo)
   # =========================================================
 
-  RDSSubnetGroup:
-    Type: AWS::RDS::DBSubnetGroup
+  DatabaseInstance:
+    Type: AWS::EC2::Instance
     Properties:
-      DBSubnetGroupDescription: Subnets privadas utilizadas pelo RDS
-      SubnetIds:
-        - Fn::ImportValue: Network-PrivateSubnet1Id
-        - Fn::ImportValue: Network-PrivateSubnet2Id
-
-      Tags:
-        - Key: Name
-          Value: RDS-SubnetGroup
-
-
-  # =========================================================
-  # RDS DATABASE
-  # =========================================================
-
-  RDSDatabase:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      DBInstanceIdentifier: banco-principal
-      Engine: mysql
-      EngineVersion: "8.4"
-      DBInstanceClass: db.t3.micro
-      AllocatedStorage: 20
-      StorageType: gp3
-      StorageEncrypted: true
-      DBName: appdb
-
-      MasterUsername: !Ref DBUsername
-      MasterUserPassword: !Ref DBPassword
-
-      VPCSecurityGroups:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref AmiId
+      KeyName: !Ref KeyName
+      SubnetId:
+        Fn::ImportValue: Network-PrivateSubnet1Id
+      SecurityGroupIds:
         - Fn::ImportValue: Network-DBSecurityGroupId
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 20
+            VolumeType: gp3
+            Encrypted: true
+            DeleteOnTermination: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -e
 
-      DBSubnetGroupName: !Ref RDSSubnetGroup
-      PubliclyAccessible: false
-      BackupRetentionPeriod: 7
-      MultiAZ: false
-      DeletionProtection: false
+          # Atualizacao de pacotes do sistema
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -y
+          apt-get upgrade -y
+
+          # Instalacao e inicializacao do Docker
+          apt-get install -y docker.io
+          systemctl start docker
+          systemctl enable docker
+          usermod -aG docker ubuntu
+
+          # Instalacao do MySQL Server nativo
+          apt-get install -y mysql-server
+
+          # Permitir conexoes de rede privada (bind 0.0.0.0)
+          sed -i 's/^bind-address\s*=.*/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf
+          sed -i 's/^mysqlx-bind-address\s*=.*/mysqlx-bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf 2>/dev/null || true
+
+          # Reiniciar e habilitar o servico MySQL
+          systemctl restart mysql
+          systemctl enable mysql
+
+          # Aguardar MySQL inicializar completamente
+          until mysqladmin ping --silent; do
+              sleep 2
+          done
+
+          # Configuracao de seguranca basica, criacao do banco e usuario da aplicacao
+          mysql -u root <<EOF
+          ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '${DBPassword}';
+          CREATE DATABASE IF NOT EXISTS \`${DBName}\`;
+          CREATE USER IF NOT EXISTS '${DBUsername}'@'%' IDENTIFIED BY '${DBPassword}';
+          GRANT ALL PRIVILEGES ON \`${DBName}\`.* TO '${DBUsername}'@'%';
+          FLUSH PRIVILEGES;
+          EOF
 
       Tags:
         - Key: Name
-          Value: RDS-Banco-Principal
-
+          Value: EC2-Database-MySQL
+        - Key: Environment
+          Value: Production
+        - Key: Role
+          Value: Database
+        - Key: Project
+          Value: Projeto-Extensao
 
 # =========================================================
 # OUTPUTS
@@ -210,7 +261,6 @@ Outputs:
     Export:
       Name: Database-LogBucketArn
 
-
   # -------------------------
   # BRONZE
   # -------------------------
@@ -226,7 +276,6 @@ Outputs:
     Value: !GetAtt BronzeBucket.Arn
     Export:
       Name: Database-BronzeBucketArn
-
 
   # -------------------------
   # SILVER
@@ -244,7 +293,6 @@ Outputs:
     Export:
       Name: Database-SilverBucketArn
 
-
   # -------------------------
   # GOLD
   # -------------------------
@@ -261,25 +309,24 @@ Outputs:
     Export:
       Name: Database-GoldBucketArn
 
-
   # -------------------------
-  # RDS
+  # DATABASE EC2
   # -------------------------
 
-  RDSInstanceIdentifier:
-    Description: Identificador da instancia RDS
-    Value: !Ref RDSDatabase
+  DatabaseInstanceId:
+    Description: ID da instancia EC2 do banco de dados MySQL
+    Value: !Ref DatabaseInstance
     Export:
-      Name: Database-RDSInstanceIdentifier
+      Name: Database-InstanceId
 
-  RDSEndpoint:
-    Description: Endpoint do banco de dados RDS
-    Value: !GetAtt RDSDatabase.Endpoint.Address
+  DatabasePrivateIp:
+    Description: IP privado da instancia de banco de dados MySQL
+    Value: !GetAtt DatabaseInstance.PrivateIp
     Export:
-      Name: Database-RDSEndpoint
+      Name: Database-PrivateIp
 
-  RDSPort:
-    Description: Porta utilizada pelo RDS
-    Value: !GetAtt RDSDatabase.Endpoint.Port
+  DatabasePort:
+    Description: Porta utilizada pelo MySQL
+    Value: "3306"
     Export:
-      Name: Database-RDSPort
+      Name: Database-Port

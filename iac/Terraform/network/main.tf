@@ -243,7 +243,7 @@ resource "aws_security_group" "backend" {
 }
 
 resource "aws_security_group" "database" {
-  description = "SG para o Banco de Dados RDS"
+  description = "SG para o Servidor de Banco de Dados MySQL (EC2)"
   vpc_id      = aws_vpc.principal.id
 
   ingress {
@@ -251,6 +251,13 @@ resource "aws_security_group" "database" {
     from_port       = 3306
     to_port         = 3306
     security_groups = [aws_security_group.backend.id]
+  }
+
+  ingress {
+    protocol        = "tcp"
+    from_port       = 22
+    to_port         = 22
+    security_groups = [aws_security_group.web_server.id]
   }
 
   egress {
@@ -261,6 +268,8 @@ resource "aws_security_group" "database" {
   }
 
   tags = {
-    Name = "SG-RDS-Database"
+    Name        = "SG-EC2-Database"
+    Project     = "Projeto-Extensao"
+    Environment = "Production"
   }
 }

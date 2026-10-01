@@ -39,6 +39,6 @@ output "backend_security_group_id" {
 }
 
 output "database_security_group_id" {
-  description = "Security Group do RDS"
+  description = "Security Group do Servidor de Banco de Dados MySQL"
   value       = aws_security_group.database.id
 }

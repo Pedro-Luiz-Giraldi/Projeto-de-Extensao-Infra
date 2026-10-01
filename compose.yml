@@ -3,11 +3,11 @@ services:
   database:
     image: pedrogiraldi/sax-db:3.0-seed
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
     networks:
       - sax-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD}"]
       retries: 10
     deploy:
       mode: replicated
@@ -23,7 +23,7 @@ services:
     depends_on:
       - database
     environment:
-      - DB_HOST=database
+      - DB_HOST=${DB_HOST}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}

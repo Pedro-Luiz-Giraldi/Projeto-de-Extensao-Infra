@@ -1,7 +1,9 @@
-export MYSQL_ROOT_PASSWORD=1234
 export DB_USERNAME=root
 export DB_PASSWORD=1234
 export DB_HOST=database
+export DB_NAME=sax_bd
 export RABBIT_HOST=rabbitmq
+export SERVER_PORT=8081
 export JWT_SECRET="$(openssl rand -base64 32)"
+export JWT_VALIDITY=3600
 export CLASSAPP_TOKEN='your_classapp_token'

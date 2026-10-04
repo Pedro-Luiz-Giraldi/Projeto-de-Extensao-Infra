@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation Template for Integration Components (Lambda que grava JSON de solicitacoes no S3 Bronze)
+
+Parameters:
+  FunctionName:
+    Description: Nome da funcao Lambda (deve ser igual a aws.lambda.function-name no application.properties)
+    Type: String
+    Default: salvar-solicitacao-s3
+
+  LabRoleName:
+    Description: Nome da role IAM existente (AWS Academy usa LabRole)
+    Type: String
+    Default: LabRole
+
+Resources:
+
+
+  SalvarSolicitacaoFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      Description: Recebe o JSON da solicitacao e grava no bucket DataLake Bronze
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/${LabRoleName}"
+      Timeout: 15
+      MemorySize: 128
+      Environment:
+        Variables:
+          BUCKET_NAME: !ImportValue Database-BronzeBucketName
+          PREFIXO: solicitacoes
+      Code:
+        ZipFile: |
+          import json
+          import os
+          from datetime import datetime, timezone
+
+          import boto3
+
+          s3 = boto3.client("s3")
+          BUCKET = os.environ["BUCKET_NAME"]
+          PREFIXO = os.environ.get("PREFIXO", "solicitacoes")
+
+
+          def lambda_handler(event, context):
+              agora = datetime.now(timezone.utc)
+              chave = f"{PREFIXO}/{agora:%Y/%m/%d}/{context.aws_request_id}.json"
+
+              s3.put_object(
+                  Bucket=BUCKET,
+                  Key=chave,
+                  Body=json.dumps(event, ensure_ascii=False).encode("utf-8"),
+                  ContentType="application/json",
+              )
+              return {"status": "ok", "bucket": BUCKET, "key": chave}
+      Tags:
+        - Key: Name
+          Value: Lambda-Salvar-Solicitacao
+        - Key: Project
+          Value: Projeto-Extensao
+        - Key: Environment
+          Value: Production
+
+  SalvarSolicitacaoLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${FunctionName}"
+      RetentionInDays: 14
+
+Outputs:
+  LambdaFunctionName:
+    Description: Nome da funcao Lambda
+    Value: !Ref SalvarSolicitacaoFunction
+    Export:
+      Name: Integration-LambdaFunctionName
+
+  LambdaFunctionArn:
+    Description: ARN da funcao Lambda
+    Value: !GetAtt SalvarSolicitacaoFunction.Arn
+    Export:
+      Name: Integration-LambdaFunctionArn

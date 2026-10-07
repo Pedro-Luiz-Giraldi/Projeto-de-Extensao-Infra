@@ -53,7 +53,7 @@ resource "aws_lb_listener" "http" {
 }
 
 # =========================================================
-# WEB SERVERS (Ubuntu 24.04 + Docker + Apache2)
+# WEB SERVERS (Ubuntu 24.04 + Docker)
 # =========================================================
 
 resource "aws_instance" "web_server_01" {
@@ -75,13 +75,10 @@ resource "aws_instance" "web_server_01" {
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -y
     apt-get upgrade -y
-    apt-get install -y docker.io apache2
+    apt-get install -y docker.io
     systemctl start docker
     systemctl enable docker
     usermod -aG docker ubuntu
-    systemctl start apache2
-    systemctl enable apache2
-    echo "<h1>Web-Server 01 (us-east-1a) - Ubuntu 24.04</h1>" > /var/www/html/index.html
   EOF
 
   tags = {
@@ -111,13 +108,10 @@ resource "aws_instance" "web_server_02" {
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -y
     apt-get upgrade -y
-    apt-get install -y docker.io apache2
+    apt-get install -y docker.io
     systemctl start docker
     systemctl enable docker
     usermod -aG docker ubuntu
-    systemctl start apache2
-    systemctl enable apache2
-    echo "<h1>Web-Server 02 (us-east-1b) - Ubuntu 24.04</h1>" > /var/www/html/index.html
   EOF
 
   tags = {
@@ -141,7 +135,7 @@ resource "aws_lb_target_group_attachment" "web_server_02" {
 }
 
 # =========================================================
-# BACKEND SERVERS (Ubuntu 24.04 + Docker + OpenJDK 17)
+# BACKEND SERVERS (Ubuntu 24.04 + Docker)
 # =========================================================
 
 resource "aws_instance" "backend_01" {
@@ -163,7 +157,7 @@ resource "aws_instance" "backend_01" {
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -y
     apt-get upgrade -y
-    apt-get install -y docker.io openjdk-17-jdk-headless
+    apt-get install -y docker.io
     systemctl start docker
     systemctl enable docker
     usermod -aG docker ubuntu
@@ -196,7 +190,7 @@ resource "aws_instance" "backend_02" {
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -y
     apt-get upgrade -y
-    apt-get install -y docker.io openjdk-17-jdk-headless
+    apt-get install -y docker.io
     systemctl start docker
     systemctl enable docker
     usermod -aG docker ubuntu

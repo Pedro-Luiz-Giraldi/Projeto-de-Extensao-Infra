@@ -35,32 +35,3 @@ variable "key_name" {
   type        = string
   default     = "vockey"
 }
-
-variable "db_username" {
-  description = "Usuario master do banco de dados MySQL"
-  type        = string
-  default     = "dbadmin"
-
-  validation {
-    condition     = can(regex("^[a-zA-Z][a-zA-Z0-9]*$", var.db_username)) && length(var.db_username) >= 4 && length(var.db_username) <= 16
-    error_message = "O usuario deve ter de 4 a 16 caracteres alfanumericos e iniciar por uma letra."
-  }
-}
-
-variable "db_password" {
-  description = "Senha master do banco de dados MySQL"
-  type        = string
-  sensitive   = true
-  default     = "AdminPassword123!"
-
-  validation {
-    condition     = length(var.db_password) >= 8 && length(var.db_password) <= 41
-    error_message = "A senha deve ter de 8 a 41 caracteres."
-  }
-}
-
-variable "db_name" {
-  description = "Nome do banco de dados inicial"
-  type        = string
-  default     = "appdb"
-}

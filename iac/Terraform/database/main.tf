@@ -166,7 +166,7 @@ resource "aws_s3_bucket_versioning" "gold" {
 }
 
 # =========================================================
-# DATABASE INSTANCE (EC2 - Ubuntu 24.04 com Docker + MySQL nativo)
+# DATABASE INSTANCE (EC2 - Ubuntu 24.04 com MySQL nativo)
 # =========================================================
 
 resource "aws_instance" "database" {
@@ -192,12 +192,6 @@ resource "aws_instance" "database" {
     apt-get update -y
     apt-get upgrade -y
 
-    # Instalacao e inicializacao do Docker
-    apt-get install -y docker.io
-    systemctl start docker
-    systemctl enable docker
-    usermod -aG docker ubuntu
-
     # Instalacao do MySQL Server nativo
     apt-get install -y mysql-server
 
@@ -208,20 +202,6 @@ resource "aws_instance" "database" {
     # Reiniciar e habilitar o servico MySQL
     systemctl restart mysql
     systemctl enable mysql
-
-    # Aguardar MySQL inicializar completamente
-    until mysqladmin ping --silent; do
-        sleep 2
-    done
-
-    # Configuracao de seguranca basica, criacao do banco e usuario da aplicacao
-    mysql -u root <<SQL
-    ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '${var.db_password}';
-    CREATE DATABASE IF NOT EXISTS \`${var.db_name}\`;
-    CREATE USER IF NOT EXISTS '${var.db_username}'@'%' IDENTIFIED BY '${var.db_password}';
-    GRANT ALL PRIVILEGES ON \`${var.db_name}\`.* TO '${var.db_username}'@'%';
-    FLUSH PRIVILEGES;
-    SQL
   EOF
 
   tags = {

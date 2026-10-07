@@ -1,0 +1,265 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation Template for ETL Components (Glue - Arquitetura Medalhao - Bronze, Silver e Gold). Os buckets vem do stack Database.
+
+Parameters:
+  LabRoleName:
+    Description: Nome da role IAM existente (AWS Academy usa LabRole)
+    Type: String
+    Default: LabRole
+
+  GlueDatabaseName:
+    Description: Nome do database no Glue Data Catalog
+    Type: String
+    Default: datalake_xingu
+
+  BronzePrefix:
+    Description: Prefixo no Bronze onde a Lambda grava os JSON (igual ao PREFIXO da Lambda)
+    Type: String
+    Default: solicitacoes
+
+  SilverPrefix:
+    Description: Prefixo no Silver onde o Job grava o Parquet
+    Type: String
+    Default: solicitacoes
+
+  GoldPrefix:
+    Description: Prefixo no Gold onde o Job grava os dados agregados
+    Type: String
+    Default: solicitacoes_por_dia
+
+Resources:
+
+  # =========================================================
+  # GLUE DATA CATALOG
+  # =========================================================
+
+  GlueDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: !Ref GlueDatabaseName
+        Description: Catalogo do DataLake (Bronze, Silver e Gold)
+
+  # =========================================================
+  # CRAWLERS (um por camada)
+  # =========================================================
+
+  BronzeCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: crawler-bronze
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/${LabRoleName}"
+      DatabaseName: !Ref GlueDatabase
+      TablePrefix: bronze_
+      Targets:
+        S3Targets:
+          - Path: !Sub
+              - "s3://${Bucket}/${BronzePrefix}/"
+              - Bucket: !ImportValue Database-BronzeBucketName
+      SchemaChangePolicy:
+        UpdateBehavior: UPDATE_IN_DATABASE
+        DeleteBehavior: LOG
+      Tags:
+        Project: Projeto-Extensao
+
+  SilverCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: crawler-silver
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/${LabRoleName}"
+      DatabaseName: !Ref GlueDatabase
+      TablePrefix: silver_
+      Targets:
+        S3Targets:
+          - Path: !Sub
+              - "s3://${Bucket}/${SilverPrefix}/"
+              - Bucket: !ImportValue Database-SilverBucketName
+      SchemaChangePolicy:
+        UpdateBehavior: UPDATE_IN_DATABASE
+        DeleteBehavior: LOG
+      Tags:
+        Project: Projeto-Extensao
+
+  GoldCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: crawler-gold
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/${LabRoleName}"
+      DatabaseName: !Ref GlueDatabase
+      TablePrefix: gold_
+      Targets:
+        S3Targets:
+          - Path: !Sub
+              - "s3://${Bucket}/${GoldPrefix}/"
+              - Bucket: !ImportValue Database-GoldBucketName
+      SchemaChangePolicy:
+        UpdateBehavior: UPDATE_IN_DATABASE
+        DeleteBehavior: LOG
+      Tags:
+        Project: Projeto-Extensao
+
+  # =========================================================
+  # GLUE JOBS
+  # =========================================================
+
+  BronzeToSilverJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: job-bronze-para-silver
+      Description: Le os JSON do Bronze, limpa e grava em Parquet no Silver
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/${LabRoleName}"
+      GlueVersion: "4.0"
+      WorkerType: G.1X
+      NumberOfWorkers: 2
+      Timeout: 15
+      MaxRetries: 0
+      Command:
+        Name: glueetl
+        PythonVersion: "3"
+        ScriptLocation: !Sub
+          - "s3://${ScriptsBucket}/scripts/bronze_para_silver.py"
+          - ScriptsBucket: !ImportValue Database-GlueScriptsBucketName
+      DefaultArguments:
+        "--job-language": python
+        "--enable-metrics": "true"
+        "--enable-continuous-cloudwatch-log": "true"
+        "--TempDir": !Sub
+          - "s3://${ScriptsBucket}/temp/"
+          - ScriptsBucket: !ImportValue Database-GlueScriptsBucketName
+        "--BRONZE_PATH": !Sub
+          - "s3://${Bucket}/${BronzePrefix}/"
+          - Bucket: !ImportValue Database-BronzeBucketName
+        "--SILVER_PATH": !Sub
+          - "s3://${Bucket}/${SilverPrefix}/"
+          - Bucket: !ImportValue Database-SilverBucketName
+      Tags:
+        Project: Projeto-Extensao
+
+  SilverToGoldJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: job-silver-para-gold
+      Description: Le o Parquet do Silver, agrega e grava no Gold
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/${LabRoleName}"
+      GlueVersion: "4.0"
+      WorkerType: G.1X
+      NumberOfWorkers: 2
+      Timeout: 15
+      MaxRetries: 0
+      Command:
+        Name: glueetl
+        PythonVersion: "3"
+        ScriptLocation: !Sub
+          - "s3://${ScriptsBucket}/scripts/silver_para_gold.py"
+          - ScriptsBucket: !ImportValue Database-GlueScriptsBucketName
+      DefaultArguments:
+        "--job-language": python
+        "--enable-metrics": "true"
+        "--enable-continuous-cloudwatch-log": "true"
+        "--TempDir": !Sub
+          - "s3://${ScriptsBucket}/temp/"
+          - ScriptsBucket: !ImportValue Database-GlueScriptsBucketName
+        "--SILVER_PATH": !Sub
+          - "s3://${Bucket}/${SilverPrefix}/"
+          - Bucket: !ImportValue Database-SilverBucketName
+        "--GOLD_PATH": !Sub
+          - "s3://${Bucket}/${GoldPrefix}/"
+          - Bucket: !ImportValue Database-GoldBucketName
+      Tags:
+        Project: Projeto-Extensao
+
+  # =========================================================
+  # WORKFLOW (Crawler Bronze > Job Silver > Job Gold > Crawlers Silver/Gold)
+  # =========================================================
+
+  MedalhaoWorkflow:
+    Type: AWS::Glue::Workflow
+    Properties:
+      Name: workflow-medalhao
+      Description: Executa o pipeline Bronze, Silver e Gold
+      Tags:
+        Project: Projeto-Extensao
+
+  TriggerInicio:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: trigger-inicio
+      WorkflowName: !Ref MedalhaoWorkflow
+      Type: ON_DEMAND
+      Actions:
+        - CrawlerName: !Ref BronzeCrawler
+
+  TriggerBronzeParaSilver:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: trigger-bronze-para-silver
+      WorkflowName: !Ref MedalhaoWorkflow
+      Type: CONDITIONAL
+      StartOnCreation: true
+      Predicate:
+        Logical: AND
+        Conditions:
+          - LogicalOperator: EQUALS
+            CrawlerName: !Ref BronzeCrawler
+            CrawlState: SUCCEEDED
+      Actions:
+        - JobName: !Ref BronzeToSilverJob
+
+  TriggerSilverParaGold:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: trigger-silver-para-gold
+      WorkflowName: !Ref MedalhaoWorkflow
+      Type: CONDITIONAL
+      StartOnCreation: true
+      Predicate:
+        Logical: AND
+        Conditions:
+          - LogicalOperator: EQUALS
+            JobName: !Ref BronzeToSilverJob
+            State: SUCCEEDED
+      Actions:
+        - JobName: !Ref SilverToGoldJob
+
+  TriggerCatalogarSilverGold:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: trigger-catalogar-silver-gold
+      WorkflowName: !Ref MedalhaoWorkflow
+      Type: CONDITIONAL
+      StartOnCreation: true
+      Predicate:
+        Logical: AND
+        Conditions:
+          - LogicalOperator: EQUALS
+            JobName: !Ref SilverToGoldJob
+            State: SUCCEEDED
+      Actions:
+        - CrawlerName: !Ref SilverCrawler
+        - CrawlerName: !Ref GoldCrawler
+
+Outputs:
+  GlueDatabaseName:
+    Description: Nome do database no Glue Data Catalog
+    Value: !Ref GlueDatabase
+    Export:
+      Name: Etl-GlueDatabaseName
+
+  BronzeToSilverJobName:
+    Description: Nome do Job Bronze para Silver
+    Value: !Ref BronzeToSilverJob
+    Export:
+      Name: Etl-BronzeToSilverJobName
+
+  SilverToGoldJobName:
+    Description: Nome do Job Silver para Gold
+    Value: !Ref SilverToGoldJob
+    Export:
+      Name: Etl-SilverToGoldJobName
+
+  WorkflowName:
+    Description: Workflow do pipeline medalhao
+    Value: !Ref MedalhaoWorkflow
+    Export:
+      Name: Etl-WorkflowName

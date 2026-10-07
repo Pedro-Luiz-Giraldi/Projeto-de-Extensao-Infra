@@ -56,6 +56,37 @@ Resources:
           Value: Production
 
   # =========================================================
+  # S3 - SCRIPTS DO GLUE
+  # =========================================================
+
+  GlueScriptsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+      VersioningConfiguration:
+        Status: Enabled
+
+      Tags:
+        - Key: Name
+          Value: S3-Glue-Scripts
+        - Key: Purpose
+          Value: Glue-Scripts
+        - Key: Project
+          Value: Projeto-Extensao
+        - Key: Environment
+          Value: Production
+
+  # =========================================================
   # S3 - DATALAKE BRONZE
   # =========================================================
 
@@ -226,6 +257,22 @@ Outputs:
     Value: !GetAtt LogBucket.Arn
     Export:
       Name: Database-LogBucketArn
+
+  # -------------------------
+  # GLUE SCRIPTS
+  # -------------------------
+
+  GlueScriptsBucketName:
+    Description: Nome do bucket que guarda os scripts dos Glue Jobs
+    Value: !Ref GlueScriptsBucket
+    Export:
+      Name: Database-GlueScriptsBucketName
+
+  GlueScriptsBucketArn:
+    Description: ARN do bucket de scripts do Glue
+    Value: !GetAtt GlueScriptsBucket.Arn
+    Export:
+      Name: Database-GlueScriptsBucketArn
 
   # -------------------------
   # BRONZE

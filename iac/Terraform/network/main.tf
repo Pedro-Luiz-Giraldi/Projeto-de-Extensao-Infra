@@ -230,6 +230,14 @@ resource "aws_security_group" "backend" {
     security_groups = [aws_security_group.web_server.id]
   }
 
+  ingress {
+    description = "Acesso SSH para gestao"
+    protocol    = "tcp"
+    from_port   = 22
+    to_port     = 22
+    cidr_blocks = [var.my_ip]
+  }
+
   egress {
     protocol    = "-1"
     from_port   = 0
@@ -240,6 +248,63 @@ resource "aws_security_group" "backend" {
   tags = {
     Name = "SG-Backend"
   }
+}
+
+locals {
+  swarm_ports = {
+    cluster_management     = { protocol = "tcp", port = 2377 }
+    node_communication_tcp = { protocol = "tcp", port = 7946 }
+    node_communication_udp = { protocol = "udp", port = 7946 }
+    overlay_network        = { protocol = "udp", port = 4789 }
+  }
+}
+
+resource "aws_security_group_rule" "web_swarm_self" {
+  for_each = local.swarm_ports
+
+  type              = "ingress"
+  description       = "Docker Swarm - ${each.key} (nos SG-WebServer)"
+  from_port         = each.value.port
+  to_port           = each.value.port
+  protocol          = each.value.protocol
+  security_group_id = aws_security_group.web_server.id
+  self              = true
+}
+
+resource "aws_security_group_rule" "web_swarm_from_backend" {
+  for_each = local.swarm_ports
+
+  type                     = "ingress"
+  description              = "Docker Swarm - ${each.key} (nos SG-Backend)"
+  from_port                = each.value.port
+  to_port                  = each.value.port
+  protocol                 = each.value.protocol
+  security_group_id        = aws_security_group.web_server.id
+  source_security_group_id = aws_security_group.backend.id
+}
+
+resource "aws_security_group_rule" "backend_swarm_self" {
+  for_each = local.swarm_ports
+
+  type              = "ingress"
+  description       = "Docker Swarm - ${each.key} (nos SG-Backend)"
+  from_port         = each.value.port
+  to_port           = each.value.port
+  protocol          = each.value.protocol
+  security_group_id = aws_security_group.backend.id
+  self              = true
+}
+
+resource "aws_security_group_rule" "backend_swarm_from_web" {
+  for_each = local.swarm_ports
+
+  type                     = "ingress"
+  description              = "Docker Swarm - ${each.key} (nos SG-WebServer)"
+  from_port                = each.value.port
+  to_port                  = each.value.port
+  protocol                 = each.value.protocol
+  security_group_id        = aws_security_group.backend.id
+  source_security_group_id = aws_security_group.web_server.id
 }
 
 resource "aws_security_group" "database" {

@@ -22,27 +22,6 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName
     Default: vockey
 
-  DBUsername:
-    Description: Usuario master do banco de dados MySQL
-    Type: String
-    Default: dbadmin
-    MinLength: "4"
-    MaxLength: "16"
-    AllowedPattern: "^[a-zA-Z][a-zA-Z0-9]*$"
-
-  DBPassword:
-    Description: Senha master do banco de dados MySQL
-    Type: String
-    NoEcho: true
-    MinLength: "8"
-    MaxLength: "41"
-    Default: AdminPassword123!
-
-  DBName:
-    Description: Nome do banco de dados inicial
-    Type: String
-    Default: appdb
-
 Resources:
 
   # =========================================================
@@ -73,6 +52,8 @@ Resources:
           Value: Logs
         - Key: Project
           Value: Projeto-Extensao
+        - Key: Environment
+          Value: Production
 
   # =========================================================
   # S3 - DATALAKE BRONZE
@@ -104,6 +85,8 @@ Resources:
           Value: Bronze
         - Key: Project
           Value: Projeto-Extensao
+        - Key: Environment
+          Value: Production
 
   # =========================================================
   # S3 - DATALAKE SILVER
@@ -135,6 +118,8 @@ Resources:
           Value: Silver
         - Key: Project
           Value: Projeto-Extensao
+        - Key: Environment
+          Value: Production
 
   # =========================================================
   # S3 - DATALAKE GOLD
@@ -166,6 +151,8 @@ Resources:
           Value: Gold
         - Key: Project
           Value: Projeto-Extensao
+        - Key: Environment
+          Value: Production
 
   # =========================================================
   # DATABASE INSTANCE (EC2 - Ubuntu 24.04 com MySQL nativo)
@@ -188,46 +175,25 @@ Resources:
             VolumeType: gp3
             Encrypted: true
             DeleteOnTermination: true
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          set -e
+      UserData: !Base64 |
+        #!/bin/bash
+        set -e
 
-          # Atualizacao de pacotes do sistema
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get update -y
-          apt-get upgrade -y
+        # Atualizacao de pacotes do sistema
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update -y
+        apt-get upgrade -y
 
-          # Instalacao e inicializacao do Docker
-          apt-get install -y docker.io
-          systemctl start docker
-          systemctl enable docker
-          usermod -aG docker ubuntu
+        # Instalacao do MySQL Server nativo
+        apt-get install -y mysql-server
 
-          # Instalacao do MySQL Server nativo
-          apt-get install -y mysql-server
+        # Permitir conexoes de rede privada (bind 0.0.0.0)
+        sed -i 's/^bind-address\s*=.*/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf
+        sed -i 's/^mysqlx-bind-address\s*=.*/mysqlx-bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf 2>/dev/null || true
 
-          # Permitir conexoes de rede privada (bind 0.0.0.0)
-          sed -i 's/^bind-address\s*=.*/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf
-          sed -i 's/^mysqlx-bind-address\s*=.*/mysqlx-bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf 2>/dev/null || true
-
-          # Reiniciar e habilitar o servico MySQL
-          systemctl restart mysql
-          systemctl enable mysql
-
-          # Aguardar MySQL inicializar completamente
-          until mysqladmin ping --silent; do
-              sleep 2
-          done
-
-          # Configuracao de seguranca basica, criacao do banco e usuario da aplicacao
-          mysql -u root <<EOF
-          ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '${DBPassword}';
-          CREATE DATABASE IF NOT EXISTS \`${DBName}\`;
-          CREATE USER IF NOT EXISTS '${DBUsername}'@'%' IDENTIFIED BY '${DBPassword}';
-          GRANT ALL PRIVILEGES ON \`${DBName}\`.* TO '${DBUsername}'@'%';
-          FLUSH PRIVILEGES;
-          EOF
+        # Reiniciar e habilitar o servico MySQL
+        systemctl restart mysql
+        systemctl enable mysql
 
       Tags:
         - Key: Name

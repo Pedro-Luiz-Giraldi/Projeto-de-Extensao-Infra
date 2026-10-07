@@ -238,6 +238,11 @@ Resources:
           FromPort: 22
           ToPort: 22
           SourceSecurityGroupId: !Ref WebServerSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref MyIP
+          Description: Acesso SSH para gestao
       SecurityGroupEgress:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
@@ -269,6 +274,168 @@ Resources:
           Value: Projeto-Extensao
         - Key: Environment
           Value: Production
+
+  # Stack 6 - Docker Swarm Rules (SG-WebServer)
+  WebSwarmSelfClusterManagement:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref WebServerSecurityGroup
+      SourceSecurityGroupId: !Ref WebServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 2377
+      ToPort: 2377
+      Description: Docker Swarm - cluster_management (nos SG-WebServer)
+
+  WebSwarmSelfNodeCommunicationTcp:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref WebServerSecurityGroup
+      SourceSecurityGroupId: !Ref WebServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 7946
+      ToPort: 7946
+      Description: Docker Swarm - node_communication_tcp (nos SG-WebServer)
+
+  WebSwarmSelfNodeCommunicationUdp:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref WebServerSecurityGroup
+      SourceSecurityGroupId: !Ref WebServerSecurityGroup
+      IpProtocol: udp
+      FromPort: 7946
+      ToPort: 7946
+      Description: Docker Swarm - node_communication_udp (nos SG-WebServer)
+
+  WebSwarmSelfOverlayNetwork:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref WebServerSecurityGroup
+      SourceSecurityGroupId: !Ref WebServerSecurityGroup
+      IpProtocol: udp
+      FromPort: 4789
+      ToPort: 4789
+      Description: Docker Swarm - overlay_network (nos SG-WebServer)
+
+  WebSwarmFromBackendClusterManagement:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref WebServerSecurityGroup
+      SourceSecurityGroupId: !Ref BackendSecurityGroup
+      IpProtocol: tcp
+      FromPort: 2377
+      ToPort: 2377
+      Description: Docker Swarm - cluster_management (nos SG-Backend)
+
+  WebSwarmFromBackendNodeCommunicationTcp:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref WebServerSecurityGroup
+      SourceSecurityGroupId: !Ref BackendSecurityGroup
+      IpProtocol: tcp
+      FromPort: 7946
+      ToPort: 7946
+      Description: Docker Swarm - node_communication_tcp (nos SG-Backend)
+
+  WebSwarmFromBackendNodeCommunicationUdp:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref WebServerSecurityGroup
+      SourceSecurityGroupId: !Ref BackendSecurityGroup
+      IpProtocol: udp
+      FromPort: 7946
+      ToPort: 7946
+      Description: Docker Swarm - node_communication_udp (nos SG-Backend)
+
+  WebSwarmFromBackendOverlayNetwork:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref WebServerSecurityGroup
+      SourceSecurityGroupId: !Ref BackendSecurityGroup
+      IpProtocol: udp
+      FromPort: 4789
+      ToPort: 4789
+      Description: Docker Swarm - overlay_network (nos SG-Backend)
+
+  # Stack 7 - Docker Swarm Rules (SG-Backend)
+  BackendSwarmSelfClusterManagement:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref BackendSecurityGroup
+      SourceSecurityGroupId: !Ref BackendSecurityGroup
+      IpProtocol: tcp
+      FromPort: 2377
+      ToPort: 2377
+      Description: Docker Swarm - cluster_management (nos SG-Backend)
+
+  BackendSwarmSelfNodeCommunicationTcp:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref BackendSecurityGroup
+      SourceSecurityGroupId: !Ref BackendSecurityGroup
+      IpProtocol: tcp
+      FromPort: 7946
+      ToPort: 7946
+      Description: Docker Swarm - node_communication_tcp (nos SG-Backend)
+
+  BackendSwarmSelfNodeCommunicationUdp:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref BackendSecurityGroup
+      SourceSecurityGroupId: !Ref BackendSecurityGroup
+      IpProtocol: udp
+      FromPort: 7946
+      ToPort: 7946
+      Description: Docker Swarm - node_communication_udp (nos SG-Backend)
+
+  BackendSwarmSelfOverlayNetwork:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref BackendSecurityGroup
+      SourceSecurityGroupId: !Ref BackendSecurityGroup
+      IpProtocol: udp
+      FromPort: 4789
+      ToPort: 4789
+      Description: Docker Swarm - overlay_network (nos SG-Backend)
+
+  BackendSwarmFromWebClusterManagement:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref BackendSecurityGroup
+      SourceSecurityGroupId: !Ref WebServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 2377
+      ToPort: 2377
+      Description: Docker Swarm - cluster_management (nos SG-WebServer)
+
+  BackendSwarmFromWebNodeCommunicationTcp:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref BackendSecurityGroup
+      SourceSecurityGroupId: !Ref WebServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 7946
+      ToPort: 7946
+      Description: Docker Swarm - node_communication_tcp (nos SG-WebServer)
+
+  BackendSwarmFromWebNodeCommunicationUdp:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref BackendSecurityGroup
+      SourceSecurityGroupId: !Ref WebServerSecurityGroup
+      IpProtocol: udp
+      FromPort: 7946
+      ToPort: 7946
+      Description: Docker Swarm - node_communication_udp (nos SG-WebServer)
+
+  BackendSwarmFromWebOverlayNetwork:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref BackendSecurityGroup
+      SourceSecurityGroupId: !Ref WebServerSecurityGroup
+      IpProtocol: udp
+      FromPort: 4789
+      ToPort: 4789
+      Description: Docker Swarm - overlay_network (nos SG-WebServer)
 
 # ---------------------- Setando Parâmetros de Conexão ---------------------
 Outputs:

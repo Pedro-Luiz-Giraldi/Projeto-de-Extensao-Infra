@@ -19,9 +19,7 @@ services:
         condition: on-failure
 
   backend:
-    image: pedrogiraldi/sax-back:1.0
-    depends_on:
-      - database
+    image: pedrogiraldi/sax-back:2.0
     environment:
       - DB_HOST=${DB_HOST}
       - DB_USERNAME=${DB_USERNAME}
@@ -91,9 +89,6 @@ services:
 
   alertas:
     image: pedrogiraldi/sax-alertas:1.0
-    depends_on:
-      - rabbitmq
-      - backend
     environment:
       - MONOLITO_URL=http://backend:8081
       - RABBIT_HOST=rabbitmq

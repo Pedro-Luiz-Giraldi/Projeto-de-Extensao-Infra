@@ -1,7 +1,3 @@
-provider "aws" {
-  region = "us-east-1"
-}
-
 resource "aws_vpc" "principal" {
   cidr_block           = "10.0.0.0/22"
   enable_dns_support   = true

@@ -3,11 +3,6 @@ variable "private_subnet_1_id" {
   type        = string
 }
 
-variable "private_subnet_2_id" {
-  description = "ID da subnet privada us-east-1b da stack network"
-  type        = string
-}
-
 variable "database_security_group_id" {
   description = "ID do Security Group da stack network"
   type        = string

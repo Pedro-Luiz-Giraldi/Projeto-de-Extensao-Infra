@@ -1,13 +1,9 @@
-data "aws_ssm_parameter" "ubuntu_ami" {
-  name = var.ami_id
-}
-
 # =========================================================
 # DATABASE INSTANCE (EC2 - Ubuntu 24.04 com MySQL nativo)
 # =========================================================
 
 resource "aws_instance" "database" {
-  ami                    = data.aws_ssm_parameter.ubuntu_ami.value
+  ami                    = var.ami_id
   instance_type          = var.instance_type
   key_name               = var.key_name
   subnet_id              = var.private_subnet_1_id

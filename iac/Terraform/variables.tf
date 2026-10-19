@@ -26,12 +26,6 @@ variable "app_instance_type" {
   }
 }
 
-variable "app_ami_id" {
-  description = "Nome do parametro SSM da AMI Ubuntu 24.04 LTS em us-east-1"
-  type        = string
-  default     = "/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id"
-}
-
 variable "app_key_name" {
   description = "Nome do KeyPair para acesso SSH as instancias Web e Back-End"
   type        = string
@@ -47,12 +41,6 @@ variable "db_instance_type" {
     condition     = contains(["t3.micro", "t3.small", "t3.medium"], var.db_instance_type)
     error_message = "Deve ser um tipo de instancia valido."
   }
-}
-
-variable "db_ami_id" {
-  description = "Nome do parametro SSM da AMI Ubuntu 24.04 LTS em us-east-1"
-  type        = string
-  default     = "/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id"
 }
 
 variable "db_key_name" {

@@ -50,9 +50,8 @@ variable "instance_type" {
 }
 
 variable "ami_id" {
-  description = "Nome do parametro SSM da AMI Ubuntu 24.04 LTS em us-east-1"
+  description = "ID da AMI Ubuntu 26.04 a ser usada nas instancias"
   type        = string
-  default     = "/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id"
 }
 
 variable "key_name" {

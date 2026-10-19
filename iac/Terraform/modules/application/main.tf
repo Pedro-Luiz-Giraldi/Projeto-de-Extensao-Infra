@@ -1,7 +1,3 @@
-data "aws_ssm_parameter" "ubuntu_ami" {
-  name = var.ami_id
-}
-
 # =========================================================
 # APPLICATION LOAD BALANCER & TARGET GROUP
 # =========================================================
@@ -53,7 +49,7 @@ resource "aws_lb_listener" "http" {
 # =========================================================
 
 resource "aws_instance" "web_server_01" {
-  ami                    = data.aws_ssm_parameter.ubuntu_ami.value
+  ami                    = var.ami_id
   instance_type          = var.instance_type
   key_name               = var.key_name
   subnet_id              = var.public_subnet_1_id
@@ -86,7 +82,7 @@ resource "aws_instance" "web_server_01" {
 }
 
 resource "aws_instance" "web_server_02" {
-  ami                    = data.aws_ssm_parameter.ubuntu_ami.value
+  ami                    = var.ami_id
   instance_type          = var.instance_type
   key_name               = var.key_name
   subnet_id              = var.public_subnet_2_id
@@ -135,7 +131,7 @@ resource "aws_lb_target_group_attachment" "web_server_02" {
 # =========================================================
 
 resource "aws_instance" "backend_01" {
-  ami                    = data.aws_ssm_parameter.ubuntu_ami.value
+  ami                    = var.ami_id
   instance_type          = var.instance_type
   key_name               = var.key_name
   subnet_id              = var.private_subnet_1_id
@@ -168,7 +164,7 @@ resource "aws_instance" "backend_01" {
 }
 
 resource "aws_instance" "backend_02" {
-  ami                    = data.aws_ssm_parameter.ubuntu_ami.value
+  ami                    = var.ami_id
   instance_type          = var.instance_type
   key_name               = var.key_name
   subnet_id              = var.private_subnet_2_id

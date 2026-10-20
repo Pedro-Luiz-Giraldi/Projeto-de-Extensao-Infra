@@ -1,5 +1,5 @@
 resource "aws_vpc" "principal" {
-  cidr_block           = "10.0.0.0/22"
+  cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
 
@@ -21,45 +21,45 @@ resource "aws_internet_gateway_attachment" "principal" {
 
 resource "aws_subnet" "publica_1" {
   vpc_id                  = aws_vpc.principal.id
-  cidr_block              = "10.0.0.0/26"
-  availability_zone       = "us-east-1a"
+  cidr_block              = var.public_subnet_cidrs[0]
+  availability_zone       = var.availability_zones[0]
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "Sub-net publica - 10.0.0.0/26 | us-east-1a"
+    Name = "Sub-net publica - ${var.public_subnet_cidrs[0]} | ${var.availability_zones[0]}"
   }
 }
 
 resource "aws_subnet" "publica_2" {
   vpc_id                  = aws_vpc.principal.id
-  cidr_block              = "10.0.0.64/26"
-  availability_zone       = "us-east-1b"
+  cidr_block              = var.public_subnet_cidrs[1]
+  availability_zone       = var.availability_zones[1]
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "Sub-net publica - 10.0.0.64/26 | us-east-1b"
+    Name = "Sub-net publica - ${var.public_subnet_cidrs[1]} | ${var.availability_zones[1]}"
   }
 }
 
 resource "aws_subnet" "privada_1" {
   vpc_id                  = aws_vpc.principal.id
-  cidr_block              = "10.0.2.0/26"
-  availability_zone       = "us-east-1a"
+  cidr_block              = var.private_subnet_cidrs[0]
+  availability_zone       = var.availability_zones[0]
   map_public_ip_on_launch = false
 
   tags = {
-    Name = "Sub-net privada - 10.0.2.0/26 | us-east-1a"
+    Name = "Sub-net privada - ${var.private_subnet_cidrs[0]} | ${var.availability_zones[0]}"
   }
 }
 
 resource "aws_subnet" "privada_2" {
   vpc_id                  = aws_vpc.principal.id
-  cidr_block              = "10.0.2.64/26"
-  availability_zone       = "us-east-1b"
+  cidr_block              = var.private_subnet_cidrs[1]
+  availability_zone       = var.availability_zones[1]
   map_public_ip_on_launch = false
 
   tags = {
-    Name = "Sub-net privada - 10.0.2.64/26 | us-east-1b"
+    Name = "Sub-net privada - ${var.private_subnet_cidrs[1]} | ${var.availability_zones[1]}"
   }
 }
 
@@ -246,61 +246,47 @@ resource "aws_security_group" "backend" {
   }
 }
 
-locals {
-  swarm_ports = {
-    cluster_management     = { protocol = "tcp", port = 2377 }
-    node_communication_tcp = { protocol = "tcp", port = 7946 }
-    node_communication_udp = { protocol = "udp", port = 7946 }
-    overlay_network        = { protocol = "udp", port = 4789 }
+resource "aws_security_group" "swarm" {
+  description = "SG para trafego do Docker Swarm (nos Web e Backend)"
+  vpc_id      = aws_vpc.principal.id
+
+  ingress {
+    description = "Docker Swarm - cluster management"
+    protocol    = "tcp"
+    from_port   = 2377
+    to_port     = 2377
+    self        = true
   }
-}
 
-resource "aws_security_group_rule" "web_swarm_self" {
-  for_each = local.swarm_ports
+  ingress {
+    description = "Docker Swarm - node communication (TCP)"
+    protocol    = "tcp"
+    from_port   = 7946
+    to_port     = 7946
+    self        = true
+  }
 
-  type              = "ingress"
-  description       = "Docker Swarm - ${each.key} (nos SG-WebServer)"
-  from_port         = each.value.port
-  to_port           = each.value.port
-  protocol          = each.value.protocol
-  security_group_id = aws_security_group.web_server.id
-  self              = true
-}
+  ingress {
+    description = "Docker Swarm - node communication (UDP)"
+    protocol    = "udp"
+    from_port   = 7946
+    to_port     = 7946
+    self        = true
+  }
 
-resource "aws_security_group_rule" "web_swarm_from_backend" {
-  for_each = local.swarm_ports
+  ingress {
+    description = "Docker Swarm - overlay network (VXLAN)"
+    protocol    = "udp"
+    from_port   = 4789
+    to_port     = 4789
+    self        = true
+  }
 
-  type                     = "ingress"
-  description              = "Docker Swarm - ${each.key} (nos SG-Backend)"
-  from_port                = each.value.port
-  to_port                  = each.value.port
-  protocol                 = each.value.protocol
-  security_group_id        = aws_security_group.web_server.id
-  source_security_group_id = aws_security_group.backend.id
-}
-
-resource "aws_security_group_rule" "backend_swarm_self" {
-  for_each = local.swarm_ports
-
-  type              = "ingress"
-  description       = "Docker Swarm - ${each.key} (nos SG-Backend)"
-  from_port         = each.value.port
-  to_port           = each.value.port
-  protocol          = each.value.protocol
-  security_group_id = aws_security_group.backend.id
-  self              = true
-}
-
-resource "aws_security_group_rule" "backend_swarm_from_web" {
-  for_each = local.swarm_ports
-
-  type                     = "ingress"
-  description              = "Docker Swarm - ${each.key} (nos SG-WebServer)"
-  from_port                = each.value.port
-  to_port                  = each.value.port
-  protocol                 = each.value.protocol
-  security_group_id        = aws_security_group.backend.id
-  source_security_group_id = aws_security_group.web_server.id
+  tags = {
+    Name        = "SG-DockerSwarm"
+    Project     = "Projeto-Extensao"
+    Environment = "Production"
+  }
 }
 
 resource "aws_security_group" "database" {

@@ -53,7 +53,7 @@ resource "aws_instance" "web_server_01" {
   instance_type          = var.instance_type
   key_name               = var.key_name
   subnet_id              = var.public_subnet_1_id
-  vpc_security_group_ids = [var.web_server_security_group_id]
+  vpc_security_group_ids = [var.web_server_security_group_id, var.swarm_security_group_id]
 
   root_block_device {
     volume_size           = 20
@@ -86,7 +86,7 @@ resource "aws_instance" "web_server_02" {
   instance_type          = var.instance_type
   key_name               = var.key_name
   subnet_id              = var.public_subnet_2_id
-  vpc_security_group_ids = [var.web_server_security_group_id]
+  vpc_security_group_ids = [var.web_server_security_group_id, var.swarm_security_group_id]
 
   root_block_device {
     volume_size           = 20
@@ -135,7 +135,7 @@ resource "aws_instance" "backend_01" {
   instance_type          = var.instance_type
   key_name               = var.key_name
   subnet_id              = var.private_subnet_1_id
-  vpc_security_group_ids = [var.backend_security_group_id]
+  vpc_security_group_ids = [var.backend_security_group_id, var.swarm_security_group_id]
 
   root_block_device {
     volume_size           = 20
@@ -168,7 +168,7 @@ resource "aws_instance" "backend_02" {
   instance_type          = var.instance_type
   key_name               = var.key_name
   subnet_id              = var.private_subnet_2_id
-  vpc_security_group_ids = [var.backend_security_group_id]
+  vpc_security_group_ids = [var.backend_security_group_id, var.swarm_security_group_id]
 
   root_block_device {
     volume_size           = 20

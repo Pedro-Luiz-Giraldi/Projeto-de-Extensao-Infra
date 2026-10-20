@@ -38,6 +38,11 @@ variable "backend_security_group_id" {
   type        = string
 }
 
+variable "swarm_security_group_id" {
+  description = "ID do Security Group do Docker Swarm da stack network"
+  type        = string
+}
+
 variable "instance_type" {
   description = "Tipo de instancia EC2 para os servidores Web e Back-End"
   type        = string

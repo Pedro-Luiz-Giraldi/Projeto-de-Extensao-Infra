@@ -33,10 +33,6 @@ output "database_private_ip" {
   value       = module.database.database_private_ip
 }
 
-output "database_port" {
-  description = "Porta utilizada pelo MySQL"
-  value       = module.database.database_port
-}
 
 output "log_bucket_name" {
   description = "Nome do bucket utilizado para armazenamento de logs"

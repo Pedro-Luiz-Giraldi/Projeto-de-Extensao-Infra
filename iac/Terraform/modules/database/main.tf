@@ -1,5 +1,5 @@
 # =========================================================
-# DATABASE INSTANCE (EC2 - Ubuntu 24.04 com MySQL nativo)
+# DATABASE INSTANCE (EC2 - Ubuntu 26.04 com MySQL nativo)
 # =========================================================
 
 resource "aws_instance" "database" {

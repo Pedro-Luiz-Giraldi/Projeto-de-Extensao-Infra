@@ -23,6 +23,11 @@ output "private_subnet_2_id" {
   value       = aws_subnet.privada_2.id
 }
 
+output "database_subnet_id" {
+  description = "ID da subnet privada dedicada ao banco de dados"
+  value       = aws_subnet.privada_db.id
+}
+
 output "alb_security_group_id" {
   description = "Security Group do Application Load Balancer"
   value       = aws_security_group.alb.id

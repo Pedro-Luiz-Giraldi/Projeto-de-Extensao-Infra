@@ -6,7 +6,7 @@ resource "aws_instance" "database" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
   key_name               = var.key_name
-  subnet_id              = var.private_subnet_1_id
+  subnet_id              = var.database_subnet_id
   vpc_security_group_ids = [var.database_security_group_id]
 
   root_block_device {

@@ -25,7 +25,7 @@ module "application" {
 
 module "database" {
   source                     = "./modules/database"
-  private_subnet_1_id        = module.network.private_subnet_1_id
+  database_subnet_id         = module.network.database_subnet_id
   database_security_group_id = module.network.database_security_group_id
   instance_type              = var.db_instance_type
   ami_id                     = data.aws_ami.ubuntu.id

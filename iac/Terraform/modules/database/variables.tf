@@ -1,5 +1,5 @@
-variable "private_subnet_1_id" {
-  description = "ID da subnet privada us-east-1a da stack network"
+variable "database_subnet_id" {
+  description = "ID da subnet privada dedicada ao banco de dados da stack network"
   type        = string
 }
 

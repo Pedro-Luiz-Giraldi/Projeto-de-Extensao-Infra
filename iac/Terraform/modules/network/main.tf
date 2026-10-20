@@ -63,6 +63,17 @@ resource "aws_subnet" "privada_2" {
   }
 }
 
+resource "aws_subnet" "privada_db" {
+  vpc_id                  = aws_vpc.principal.id
+  cidr_block              = var.private_subnet_cidrs[2]
+  availability_zone       = var.availability_zones[0]
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name = "Sub-net privada (database) - ${var.private_subnet_cidrs[2]} | ${var.availability_zones[0]}"
+  }
+}
+
 resource "aws_eip" "nat_gateway_1" {
   domain     = "vpc"
   depends_on = [aws_internet_gateway_attachment.principal]
@@ -133,6 +144,11 @@ resource "aws_route" "privada_padrao_1" {
 
 resource "aws_route_table_association" "privada_1" {
   subnet_id      = aws_subnet.privada_1.id
+  route_table_id = aws_route_table.privada_1.id
+}
+
+resource "aws_route_table_association" "privada_db" {
+  subnet_id      = aws_subnet.privada_db.id
   route_table_id = aws_route_table.privada_1.id
 }
 

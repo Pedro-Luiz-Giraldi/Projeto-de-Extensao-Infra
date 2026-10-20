@@ -38,12 +38,12 @@ variable "public_subnet_cidrs" {
 }
 
 variable "private_subnet_cidrs" {
-  description = "CIDRs das subnets privadas (indice 0 = primeira AZ, indice 1 = segunda AZ)"
+  description = "CIDRs das subnets privadas (0=priv_1a, 1=priv_1b, 2=subnet dedicada do banco de dados)"
   type        = list(string)
-  default     = ["10.0.2.0/26", "10.0.2.64/26"]
+  default     = ["10.0.2.0/26", "10.0.2.64/26", "10.0.2.128/26"]
 
   validation {
-    condition     = length(var.private_subnet_cidrs) == 2
-    error_message = "Devem ser informados exatamente 2 CIDRs de subnets privadas."
+    condition     = length(var.private_subnet_cidrs) == 3
+    error_message = "Devem ser informados exatamente 3 CIDRs de subnets privadas."
   }
 }

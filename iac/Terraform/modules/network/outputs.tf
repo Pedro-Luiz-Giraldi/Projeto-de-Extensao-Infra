@@ -23,6 +23,11 @@ output "private_subnet_2_id" {
   value       = aws_subnet.privada_2.id
 }
 
+output "database_subnet_id" {
+  description = "ID da subnet privada dedicada ao banco de dados"
+  value       = aws_subnet.privada_db.id
+}
+
 output "alb_security_group_id" {
   description = "Security Group do Application Load Balancer"
   value       = aws_security_group.alb.id
@@ -41,4 +46,9 @@ output "backend_security_group_id" {
 output "database_security_group_id" {
   description = "Security Group do Servidor de Banco de Dados MySQL"
   value       = aws_security_group.database.id
+}
+
+output "swarm_security_group_id" {
+  description = "Security Group do Docker Swarm"
+  value       = aws_security_group.swarm.id
 }

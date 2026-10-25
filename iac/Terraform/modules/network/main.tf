@@ -1,20 +1,16 @@
-provider "aws" {
-  region = "us-east-1"
-}
-
 resource "aws_vpc" "principal" {
-  cidr_block           = "10.0.0.0/22"
+  cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
 
   tags = {
-    Name = "VPC-Principal"
+    Name = "sax-vpc"
   }
 }
 
 resource "aws_internet_gateway" "principal" {
   tags = {
-    Name = "IGW-Principal"
+    Name = "sax-igw"
   }
 }
 
@@ -25,51 +21,66 @@ resource "aws_internet_gateway_attachment" "principal" {
 
 resource "aws_subnet" "publica_1" {
   vpc_id                  = aws_vpc.principal.id
-  cidr_block              = "10.0.0.0/26"
-  availability_zone       = "us-east-1a"
+  cidr_block              = var.public_subnet_cidrs[0]
+  availability_zone       = var.availability_zones[0]
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "Sub-net publica - 10.0.0.0/26 | us-east-1a"
+    Name = "sax-subnet-public-1"
   }
 }
 
 resource "aws_subnet" "publica_2" {
   vpc_id                  = aws_vpc.principal.id
-  cidr_block              = "10.0.0.64/26"
-  availability_zone       = "us-east-1b"
+  cidr_block              = var.public_subnet_cidrs[1]
+  availability_zone       = var.availability_zones[1]
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "Sub-net publica - 10.0.0.64/26 | us-east-1b"
+    Name = "sax-subnet-public-2"
   }
 }
 
 resource "aws_subnet" "privada_1" {
   vpc_id                  = aws_vpc.principal.id
-  cidr_block              = "10.0.2.0/26"
-  availability_zone       = "us-east-1a"
+  cidr_block              = var.private_subnet_cidrs[0]
+  availability_zone       = var.availability_zones[0]
   map_public_ip_on_launch = false
 
   tags = {
-    Name = "Sub-net privada - 10.0.2.0/26 | us-east-1a"
+    Name = "sax-subnet-private-1"
   }
 }
 
 resource "aws_subnet" "privada_2" {
   vpc_id                  = aws_vpc.principal.id
-  cidr_block              = "10.0.2.64/26"
-  availability_zone       = "us-east-1b"
+  cidr_block              = var.private_subnet_cidrs[1]
+  availability_zone       = var.availability_zones[1]
   map_public_ip_on_launch = false
 
   tags = {
-    Name = "Sub-net privada - 10.0.2.64/26 | us-east-1b"
+    Name = "sax-subnet-private-2"
+  }
+}
+
+resource "aws_subnet" "privada_db" {
+  vpc_id                  = aws_vpc.principal.id
+  cidr_block              = var.private_subnet_cidrs[2]
+  availability_zone       = var.availability_zones[0]
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name = "sax-subnet-private-db"
   }
 }
 
 resource "aws_eip" "nat_gateway_1" {
   domain     = "vpc"
   depends_on = [aws_internet_gateway_attachment.principal]
+
+  tags = {
+    Name = "sax-eip-nat-1"
+  }
 }
 
 resource "aws_nat_gateway" "principal_1" {
@@ -77,13 +88,17 @@ resource "aws_nat_gateway" "principal_1" {
   subnet_id     = aws_subnet.publica_1.id
 
   tags = {
-    Name = "NAT-Gateway-1a"
+    Name = "sax-nat-1"
   }
 }
 
 resource "aws_eip" "nat_gateway_2" {
   domain     = "vpc"
   depends_on = [aws_internet_gateway_attachment.principal]
+
+  tags = {
+    Name = "sax-eip-nat-2"
+  }
 }
 
 resource "aws_nat_gateway" "principal_2" {
@@ -91,7 +106,7 @@ resource "aws_nat_gateway" "principal_2" {
   subnet_id     = aws_subnet.publica_2.id
 
   tags = {
-    Name = "NAT-Gateway-1b"
+    Name = "sax-nat-2"
   }
 }
 
@@ -99,7 +114,7 @@ resource "aws_route_table" "publica" {
   vpc_id = aws_vpc.principal.id
 
   tags = {
-    Name = "RouteTable-Publica"
+    Name = "sax-rt-public"
   }
 }
 
@@ -125,7 +140,7 @@ resource "aws_route_table" "privada_1" {
   vpc_id = aws_vpc.principal.id
 
   tags = {
-    Name = "RouteTable-Privada-1a"
+    Name = "sax-rt-private-1"
   }
 }
 
@@ -140,11 +155,16 @@ resource "aws_route_table_association" "privada_1" {
   route_table_id = aws_route_table.privada_1.id
 }
 
+resource "aws_route_table_association" "privada_db" {
+  subnet_id      = aws_subnet.privada_db.id
+  route_table_id = aws_route_table.privada_1.id
+}
+
 resource "aws_route_table" "privada_2" {
   vpc_id = aws_vpc.principal.id
 
   tags = {
-    Name = "RouteTable-Privada-1b"
+    Name = "sax-rt-private-2"
   }
 }
 
@@ -178,7 +198,7 @@ resource "aws_security_group" "alb" {
   }
 
   tags = {
-    Name = "SG-ALB"
+    Name = "sax-sg-alb"
   }
 }
 
@@ -208,7 +228,7 @@ resource "aws_security_group" "web_server" {
   }
 
   tags = {
-    Name = "SG-WebServer"
+    Name = "sax-sg-frontend"
   }
 }
 
@@ -246,65 +266,49 @@ resource "aws_security_group" "backend" {
   }
 
   tags = {
-    Name = "SG-Backend"
+    Name = "sax-sg-backend"
   }
 }
 
-locals {
-  swarm_ports = {
-    cluster_management     = { protocol = "tcp", port = 2377 }
-    node_communication_tcp = { protocol = "tcp", port = 7946 }
-    node_communication_udp = { protocol = "udp", port = 7946 }
-    overlay_network        = { protocol = "udp", port = 4789 }
+resource "aws_security_group" "swarm" {
+  description = "SG para trafego do Docker Swarm (nos Web e Backend)"
+  vpc_id      = aws_vpc.principal.id
+
+  ingress {
+    description = "Gerenciamento do cluster Docker Swarm"
+    protocol    = "tcp"
+    from_port   = 2377
+    to_port     = 2377
+    self        = true
   }
-}
 
-resource "aws_security_group_rule" "web_swarm_self" {
-  for_each = local.swarm_ports
+  ingress {
+    description = "Comunicação entre nós do Docker Swarm (TCP)"
+    protocol    = "tcp"
+    from_port   = 7946
+    to_port     = 7946
+    self        = true
+  }
 
-  type              = "ingress"
-  description       = "Docker Swarm - ${each.key} (nos SG-WebServer)"
-  from_port         = each.value.port
-  to_port           = each.value.port
-  protocol          = each.value.protocol
-  security_group_id = aws_security_group.web_server.id
-  self              = true
-}
+  ingress {
+    description = "Comunicação entre nós do Docker Swarm (UDP)"
+    protocol    = "udp"
+    from_port   = 7946
+    to_port     = 7946
+    self        = true
+  }
 
-resource "aws_security_group_rule" "web_swarm_from_backend" {
-  for_each = local.swarm_ports
+  ingress {
+    description = "Rede overlay do Docker Swarm (VXLAN)"
+    protocol    = "udp"
+    from_port   = 4789
+    to_port     = 4789
+    self        = true
+  }
 
-  type                     = "ingress"
-  description              = "Docker Swarm - ${each.key} (nos SG-Backend)"
-  from_port                = each.value.port
-  to_port                  = each.value.port
-  protocol                 = each.value.protocol
-  security_group_id        = aws_security_group.web_server.id
-  source_security_group_id = aws_security_group.backend.id
-}
-
-resource "aws_security_group_rule" "backend_swarm_self" {
-  for_each = local.swarm_ports
-
-  type              = "ingress"
-  description       = "Docker Swarm - ${each.key} (nos SG-Backend)"
-  from_port         = each.value.port
-  to_port           = each.value.port
-  protocol          = each.value.protocol
-  security_group_id = aws_security_group.backend.id
-  self              = true
-}
-
-resource "aws_security_group_rule" "backend_swarm_from_web" {
-  for_each = local.swarm_ports
-
-  type                     = "ingress"
-  description              = "Docker Swarm - ${each.key} (nos SG-WebServer)"
-  from_port                = each.value.port
-  to_port                  = each.value.port
-  protocol                 = each.value.protocol
-  security_group_id        = aws_security_group.backend.id
-  source_security_group_id = aws_security_group.web_server.id
+  tags = {
+    Name = "sax-sg-swarm"
+  }
 }
 
 resource "aws_security_group" "database" {
@@ -333,8 +337,6 @@ resource "aws_security_group" "database" {
   }
 
   tags = {
-    Name        = "SG-EC2-Database"
-    Project     = "Projeto-Extensao"
-    Environment = "Production"
+    Name = "sax-sg-database"
   }
 }

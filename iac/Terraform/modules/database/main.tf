@@ -1,5 +1,5 @@
 # =========================================================
-# DATABASE INSTANCE (EC2 - Ubuntu 26.04 com MySQL nativo)
+# DATABASE INSTANCE (EC2 - Ubuntu 26.04 with native MySQL)
 # =========================================================
 
 resource "aws_instance" "database" {
@@ -20,27 +20,24 @@ resource "aws_instance" "database" {
     #!/bin/bash
     set -e
 
-    # Atualizacao de pacotes do sistema
+    # Update system packages
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -y
     apt-get upgrade -y
 
-    # Instalacao do MySQL Server nativo
+    # Install native MySQL Server
     apt-get install -y mysql-server
 
-    # Permitir conexoes de rede privada (bind 0.0.0.0)
+    # Allow network connections (bind 0.0.0.0)
     sed -i 's/^bind-address\s*=.*/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf
     sed -i 's/^mysqlx-bind-address\s*=.*/mysqlx-bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf 2>/dev/null || true
 
-    # Reiniciar e habilitar o servico MySQL
+    # Restart and enable MySQL service
     systemctl restart mysql
     systemctl enable mysql
   EOF
 
   tags = {
-    Name        = "EC2-Database-MySQL"
-    Role        = "Database"
-    Project     = "Projeto-Extensao"
-    Environment = "Production"
+    Name = "sax-ec2-database"
   }
 }

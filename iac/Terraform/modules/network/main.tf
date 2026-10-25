@@ -4,13 +4,13 @@ resource "aws_vpc" "principal" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "VPC-Principal"
+    Name = "sax-vpc"
   }
 }
 
 resource "aws_internet_gateway" "principal" {
   tags = {
-    Name = "IGW-Principal"
+    Name = "sax-igw"
   }
 }
 
@@ -26,7 +26,7 @@ resource "aws_subnet" "publica_1" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "Sub-net publica - ${var.public_subnet_cidrs[0]} | ${var.availability_zones[0]}"
+    Name = "sax-subnet-public-1"
   }
 }
 
@@ -37,7 +37,7 @@ resource "aws_subnet" "publica_2" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "Sub-net publica - ${var.public_subnet_cidrs[1]} | ${var.availability_zones[1]}"
+    Name = "sax-subnet-public-2"
   }
 }
 
@@ -48,7 +48,7 @@ resource "aws_subnet" "privada_1" {
   map_public_ip_on_launch = false
 
   tags = {
-    Name = "Sub-net privada - ${var.private_subnet_cidrs[0]} | ${var.availability_zones[0]}"
+    Name = "sax-subnet-private-1"
   }
 }
 
@@ -59,7 +59,7 @@ resource "aws_subnet" "privada_2" {
   map_public_ip_on_launch = false
 
   tags = {
-    Name = "Sub-net privada - ${var.private_subnet_cidrs[1]} | ${var.availability_zones[1]}"
+    Name = "sax-subnet-private-2"
   }
 }
 
@@ -70,13 +70,17 @@ resource "aws_subnet" "privada_db" {
   map_public_ip_on_launch = false
 
   tags = {
-    Name = "Sub-net privada (database) - ${var.private_subnet_cidrs[2]} | ${var.availability_zones[0]}"
+    Name = "sax-subnet-private-db"
   }
 }
 
 resource "aws_eip" "nat_gateway_1" {
   domain     = "vpc"
   depends_on = [aws_internet_gateway_attachment.principal]
+
+  tags = {
+    Name = "sax-eip-nat-1"
+  }
 }
 
 resource "aws_nat_gateway" "principal_1" {
@@ -84,13 +88,17 @@ resource "aws_nat_gateway" "principal_1" {
   subnet_id     = aws_subnet.publica_1.id
 
   tags = {
-    Name = "NAT-Gateway-1a"
+    Name = "sax-nat-1"
   }
 }
 
 resource "aws_eip" "nat_gateway_2" {
   domain     = "vpc"
   depends_on = [aws_internet_gateway_attachment.principal]
+
+  tags = {
+    Name = "sax-eip-nat-2"
+  }
 }
 
 resource "aws_nat_gateway" "principal_2" {
@@ -98,7 +106,7 @@ resource "aws_nat_gateway" "principal_2" {
   subnet_id     = aws_subnet.publica_2.id
 
   tags = {
-    Name = "NAT-Gateway-1b"
+    Name = "sax-nat-2"
   }
 }
 
@@ -106,7 +114,7 @@ resource "aws_route_table" "publica" {
   vpc_id = aws_vpc.principal.id
 
   tags = {
-    Name = "RouteTable-Publica"
+    Name = "sax-rt-public"
   }
 }
 
@@ -132,7 +140,7 @@ resource "aws_route_table" "privada_1" {
   vpc_id = aws_vpc.principal.id
 
   tags = {
-    Name = "RouteTable-Privada-1a"
+    Name = "sax-rt-private-1"
   }
 }
 
@@ -156,7 +164,7 @@ resource "aws_route_table" "privada_2" {
   vpc_id = aws_vpc.principal.id
 
   tags = {
-    Name = "RouteTable-Privada-1b"
+    Name = "sax-rt-private-2"
   }
 }
 
@@ -190,7 +198,7 @@ resource "aws_security_group" "alb" {
   }
 
   tags = {
-    Name = "SG-ALB"
+    Name = "sax-sg-alb"
   }
 }
 
@@ -220,7 +228,7 @@ resource "aws_security_group" "web_server" {
   }
 
   tags = {
-    Name = "SG-WebServer"
+    Name = "sax-sg-frontend"
   }
 }
 
@@ -258,7 +266,7 @@ resource "aws_security_group" "backend" {
   }
 
   tags = {
-    Name = "SG-Backend"
+    Name = "sax-sg-backend"
   }
 }
 
@@ -267,7 +275,7 @@ resource "aws_security_group" "swarm" {
   vpc_id      = aws_vpc.principal.id
 
   ingress {
-    description = "Docker Swarm - cluster management"
+    description = "Gerenciamento do cluster Docker Swarm"
     protocol    = "tcp"
     from_port   = 2377
     to_port     = 2377
@@ -275,7 +283,7 @@ resource "aws_security_group" "swarm" {
   }
 
   ingress {
-    description = "Docker Swarm - node communication (TCP)"
+    description = "Comunicação entre nós do Docker Swarm (TCP)"
     protocol    = "tcp"
     from_port   = 7946
     to_port     = 7946
@@ -283,7 +291,7 @@ resource "aws_security_group" "swarm" {
   }
 
   ingress {
-    description = "Docker Swarm - node communication (UDP)"
+    description = "Comunicação entre nós do Docker Swarm (UDP)"
     protocol    = "udp"
     from_port   = 7946
     to_port     = 7946
@@ -291,7 +299,7 @@ resource "aws_security_group" "swarm" {
   }
 
   ingress {
-    description = "Docker Swarm - overlay network (VXLAN)"
+    description = "Rede overlay do Docker Swarm (VXLAN)"
     protocol    = "udp"
     from_port   = 4789
     to_port     = 4789
@@ -299,9 +307,7 @@ resource "aws_security_group" "swarm" {
   }
 
   tags = {
-    Name        = "SG-DockerSwarm"
-    Project     = "Projeto-Extensao"
-    Environment = "Production"
+    Name = "sax-sg-swarm"
   }
 }
 
@@ -331,8 +337,6 @@ resource "aws_security_group" "database" {
   }
 
   tags = {
-    Name        = "SG-EC2-Database"
-    Project     = "Projeto-Extensao"
-    Environment = "Production"
+    Name = "sax-sg-database"
   }
 }

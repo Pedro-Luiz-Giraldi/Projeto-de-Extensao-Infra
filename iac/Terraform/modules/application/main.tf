@@ -3,21 +3,19 @@
 # =========================================================
 
 resource "aws_lb" "publico" {
-  name               = "ALB-Publico"
+  name               = "sax-alb"
   internal           = false
   load_balancer_type = "application"
   subnets            = [var.public_subnet_1_id, var.public_subnet_2_id]
   security_groups    = [var.alb_security_group_id]
 
   tags = {
-    Name        = "ALB-Publico"
-    Project     = "Projeto-Extensao"
-    Environment = "Production"
+    Name = "sax-alb"
   }
 }
 
 resource "aws_lb_target_group" "web_servers" {
-  name     = "TG-WebServers"
+  name     = "sax-tg-frontend"
   port     = 80
   protocol = "HTTP"
   vpc_id   = var.vpc_id
@@ -28,8 +26,7 @@ resource "aws_lb_target_group" "web_servers" {
   }
 
   tags = {
-    Name    = "TG-WebServers"
-    Project = "Projeto-Extensao"
+    Name = "sax-tg-frontend"
   }
 }
 
@@ -45,7 +42,7 @@ resource "aws_lb_listener" "http" {
 }
 
 # =========================================================
-# WEB SERVERS (Ubuntu 24.04 + Docker)
+# WEB SERVERS (Ubuntu 26.04 + Docker)
 # =========================================================
 
 resource "aws_instance" "web_server_01" {
@@ -74,10 +71,7 @@ resource "aws_instance" "web_server_01" {
   EOF
 
   tags = {
-    Name        = "Web-Server 01"
-    Role        = "Frontend-WebServer"
-    Project     = "Projeto-Extensao"
-    Environment = "Production"
+    Name = "sax-ec2-frontend-1"
   }
 }
 
@@ -107,10 +101,7 @@ resource "aws_instance" "web_server_02" {
   EOF
 
   tags = {
-    Name        = "Web-Server 02"
-    Role        = "Frontend-WebServer"
-    Project     = "Projeto-Extensao"
-    Environment = "Production"
+    Name = "sax-ec2-frontend-2"
   }
 }
 
@@ -127,7 +118,7 @@ resource "aws_lb_target_group_attachment" "web_server_02" {
 }
 
 # =========================================================
-# BACKEND SERVERS (Ubuntu 24.04 + Docker)
+# BACKEND SERVERS (Ubuntu 26.04 + Docker)
 # =========================================================
 
 resource "aws_instance" "backend_01" {
@@ -156,10 +147,7 @@ resource "aws_instance" "backend_01" {
   EOF
 
   tags = {
-    Name        = "Back-End 01 (us-east-1a)"
-    Role        = "Backend"
-    Project     = "Projeto-Extensao"
-    Environment = "Production"
+    Name = "sax-ec2-backend-1"
   }
 }
 
@@ -189,9 +177,6 @@ resource "aws_instance" "backend_02" {
   EOF
 
   tags = {
-    Name        = "Back-End 02 (us-east-1b)"
-    Role        = "Backend"
-    Project     = "Projeto-Extensao"
-    Environment = "Production"
+    Name = "sax-ec2-backend-2"
   }
 }

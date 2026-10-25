@@ -6,10 +6,7 @@ resource "aws_s3_bucket" "logs" {
   bucket = "sax-logs-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
 
   tags = {
-    Name        = "S3-Registros-de-Logs"
-    Purpose     = "Logs"
-    Project     = "Projeto-Extensao"
-    Environment = "Production"
+    Name = "sax-s3-logs"
   }
 }
 
@@ -29,11 +26,7 @@ resource "aws_s3_bucket" "bronze" {
   bucket = "sax-bronze-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
 
   tags = {
-    Name        = "S3-DataLake-Bronze"
-    Purpose     = "DataLake-Bronze"
-    Layer       = "Bronze"
-    Project     = "Projeto-Extensao"
-    Environment = "Production"
+    Name = "sax-s3-bronze"
   }
 }
 
@@ -53,11 +46,7 @@ resource "aws_s3_bucket" "silver" {
   bucket = "sax-silver-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
 
   tags = {
-    Name        = "S3-DataLake-Silver"
-    Purpose     = "DataLake-Silver"
-    Layer       = "Silver"
-    Project     = "Projeto-Extensao"
-    Environment = "Production"
+    Name = "sax-s3-silver"
   }
 }
 
@@ -77,11 +66,7 @@ resource "aws_s3_bucket" "gold" {
   bucket = "sax-gold-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
 
   tags = {
-    Name        = "S3-DataLake-Gold"
-    Purpose     = "DataLake-Gold"
-    Layer       = "Gold"
-    Project     = "Projeto-Extensao"
-    Environment = "Production"
+    Name = "sax-s3-gold"
   }
 }
 

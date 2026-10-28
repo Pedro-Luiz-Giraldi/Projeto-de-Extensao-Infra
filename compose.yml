@@ -1,9 +1,9 @@
 services:
 
   database:
-    image: pedrogiraldi/sax-db:3.0-seed
+    image: pedrogiraldi/sax-db:5.0
     environment:
-      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
     networks:
       - sax-net
     healthcheck:
@@ -19,13 +19,24 @@ services:
         condition: on-failure
 
   backend:
-    image: pedrogiraldi/sax-back:2.0
+    image: pedrogiraldi/sax-back:3.0
     environment:
-      - DB_HOST=${DB_HOST}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
-      - CLASSAPP_TOKEN=${CLASSAPP_TOKEN}
+      SERVER_PORT: ${SERVER_PORT}
+      CLASSAPP_TOKEN: ${CLASSAPP_TOKEN}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_VALIDITY: ${JWT_VALIDITY}
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      EXCHANGE_NAME: ${EXCHANGE_NAME}
+      QUEUE_NAME: ${QUEUE_NAME}
+      ROUTING_KEY_NAME: ${ROUTING_KEY_NAME}
     ports:
       - "8081:8081"
     expose:
@@ -37,7 +48,7 @@ services:
       retries: 10
     deploy:
       mode: replicated
-      replicas: 2
+      replicas: 1
       placement:
         constraints:
           - node.role == worker
@@ -45,7 +56,9 @@ services:
         condition: on-failure
 
   frontend:
-    image: pedrogiraldi/sax-frontend:latest
+    image: pedrogiraldi/sax-front:3.0
+    environment:
+      BACKEND_HOST: ${BACKEND_HOST}
     ports:
       - "80:80"
     expose:
@@ -54,7 +67,7 @@ services:
       - sax-net
     deploy:
       mode: replicated
-      replicas: 2
+      replicas: 1
       placement:
         constraints:
           - node.role == manager
@@ -90,8 +103,8 @@ services:
   alertas:
     image: pedrogiraldi/sax-alertas:1.0
     environment:
-      - MONOLITO_URL=http://backend:8081
-      - RABBIT_HOST=rabbitmq
+      MONOLITO_URL: http://backend:8081
+      RABBIT_HOST: rabbitmq
     ports:
       - "8082:8082"
     expose:

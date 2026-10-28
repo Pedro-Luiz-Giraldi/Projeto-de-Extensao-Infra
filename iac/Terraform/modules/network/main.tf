@@ -283,7 +283,7 @@ resource "aws_security_group" "swarm" {
   }
 
   ingress {
-    description = "Comunicação entre nós do Docker Swarm (TCP)"
+    description = "Comunicacao entre nos do Docker Swarm (TCP)"
     protocol    = "tcp"
     from_port   = 7946
     to_port     = 7946
@@ -291,7 +291,7 @@ resource "aws_security_group" "swarm" {
   }
 
   ingress {
-    description = "Comunicação entre nós do Docker Swarm (UDP)"
+    description = "Comunicacao entre nos do Docker Swarm (UDP)"
     protocol    = "udp"
     from_port   = 7946
     to_port     = 7946

@@ -18,7 +18,7 @@ variable "my_ip" {
 variable "app_instance_type" {
   description = "Tipo de instancia EC2 para os servidores Web e Back-End"
   type        = string
-  default     = "t3.micro"
+  default     = "t3.small"
 
   validation {
     condition     = contains(["t3.micro", "t2.micro", "t3.small"], var.app_instance_type)

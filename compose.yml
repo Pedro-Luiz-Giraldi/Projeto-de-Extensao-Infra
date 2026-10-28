@@ -1,9 +1,9 @@
 services:
 
-  database:
+  db:
     image: pedrogiraldi/sax-db:5.0
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    env_file:
+      ./.env
     networks:
       - sax-net
     healthcheck:
@@ -18,25 +18,10 @@ services:
       restart_policy:
         condition: on-failure
 
-  backend:
-    image: pedrogiraldi/sax-back:3.0
-    environment:
-      SERVER_PORT: ${SERVER_PORT}
-      CLASSAPP_TOKEN: ${CLASSAPP_TOKEN}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_NAME: ${DB_NAME}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_VALIDITY: ${JWT_VALIDITY}
-      JWT_SECRET: ${JWT_SECRET}
-      RABBITMQ_HOST: ${RABBITMQ_HOST}
-      RABBITMQ_PORT: ${RABBITMQ_PORT}
-      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      EXCHANGE_NAME: ${EXCHANGE_NAME}
-      QUEUE_NAME: ${QUEUE_NAME}
-      ROUTING_KEY_NAME: ${ROUTING_KEY_NAME}
+  back:
+    image: pedrogiraldi/sax-back:4.0
+    env_file:
+      ./.env
     ports:
       - "8081:8081"
     expose:
@@ -55,10 +40,10 @@ services:
       restart_policy:
         condition: on-failure
 
-  frontend:
-    image: pedrogiraldi/sax-front:3.0
-    environment:
-      BACKEND_HOST: ${BACKEND_HOST}
+  front:
+    image: pedrogiraldi/sax-front:4.0
+    env_file:
+      ./.env
     ports:
       - "80:80"
     expose:
@@ -81,9 +66,8 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin
+    env_file:
+      ./.env
     networks:
       - sax-net
     healthcheck:
@@ -101,14 +85,32 @@ services:
         condition: on-failure
 
   alertas:
-    image: pedrogiraldi/sax-alertas:1.0
-    environment:
-      MONOLITO_URL: http://backend:8081
-      RABBIT_HOST: rabbitmq
+    image: pedrogiraldi/sax-alertas:4.0
+    env_file:
+      ./.env
     ports:
       - "8082:8082"
     expose:
       - 8082
+    networks:
+      - sax-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == worker
+      restart_policy:
+        condition: on-failure
+
+  ia:
+    image: pedrogiraldi/sax-ia:4.0
+    env_file:
+      ./.env
+    ports:
+      - "8080:8080"
+    expose:
+      - 8080
     networks:
       - sax-net
     deploy:

@@ -19,20 +19,13 @@ services:
         condition: on-failure
 
   back:
-    image: pedrogiraldi/sax-back:4.0
+    image: pedrogiraldi/sax-back:latest
     env_file:
       ./.env
-    environment:
-      SPRING_DATASOURCE_URL: "jdbc:mysql://sax_db:3306/sax_bd"
     ports:
       - "8081:8081"
-    expose:
-      - 8081
     networks:
       - sax-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/v1/solicitacoes"]
-      retries: 10
     deploy:
       mode: replicated
       replicas: 1
@@ -43,13 +36,11 @@ services:
         condition: on-failure
 
   front:
-    image: pedrogiraldi/sax-front:4.0
+    image: pedrogiraldi/sax-front:latest
     env_file:
       ./.env
     ports:
       - "80:80"
-    expose:
-      - 80
     networks:
       - sax-net
     deploy:
@@ -61,7 +52,6 @@ services:
       restart_policy:
         condition: on-failure
 
-
   rabbitmq:
     image: rabbitmq:4-management
     container_name: rabbitmq
@@ -70,9 +60,6 @@ services:
       - "15672:15672"
     env_file:
       ./.env
-    environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin
     networks:
       - sax-net
     healthcheck:
@@ -90,13 +77,11 @@ services:
         condition: on-failure
 
   alertas:
-    image: pedrogiraldi/sax-alertas:4.0
+    image: pedrogiraldi/sax-alertas:latest
     env_file:
       ./.env
     ports:
       - "8082:8082"
-    expose:
-      - 8082
     networks:
       - sax-net
     deploy:
@@ -109,13 +94,11 @@ services:
         condition: on-failure
 
   ia:
-    image: pedrogiraldi/sax-ia:4.0
+    image: pedrogiraldi/sax-ia:latest
     env_file:
       ./.env
     ports:
       - "8080:8080"
-    expose:
-      - 8080
     networks:
       - sax-net
     deploy:

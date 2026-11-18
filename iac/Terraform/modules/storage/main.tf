@@ -4,6 +4,7 @@
 
 resource "aws_s3_bucket" "logs" {
   bucket = "sax-logs-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
+  object_lock_enabled = false
 
   tags = {
     Name = "sax-s3-logs"
@@ -24,6 +25,7 @@ resource "aws_s3_bucket_public_access_block" "logs" {
 
 resource "aws_s3_bucket" "bronze" {
   bucket = "sax-bronze-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
+  object_lock_enabled = false
 
   tags = {
     Name = "sax-s3-bronze"
@@ -44,6 +46,7 @@ resource "aws_s3_bucket_public_access_block" "bronze" {
 
 resource "aws_s3_bucket" "silver" {
   bucket = "sax-silver-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
+  object_lock_enabled = false
 
   tags = {
     Name = "sax-s3-silver"
@@ -64,6 +67,7 @@ resource "aws_s3_bucket_public_access_block" "silver" {
 
 resource "aws_s3_bucket" "gold" {
   bucket = "sax-gold-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
+  object_lock_enabled = false
 
   tags = {
     Name = "sax-s3-gold"

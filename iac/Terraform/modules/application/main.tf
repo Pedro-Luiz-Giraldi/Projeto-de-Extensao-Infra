@@ -59,17 +59,6 @@ resource "aws_instance" "web_server_01" {
     delete_on_termination = true
   }
 
-  user_data = <<-EOF
-    #!/bin/bash
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update -y
-    apt-get upgrade -y
-    apt-get install -y docker.io
-    systemctl start docker
-    systemctl enable docker
-    usermod -aG docker ubuntu
-  EOF
-
   tags = {
     Name = "sax-ec2-frontend-1"
   }
@@ -88,17 +77,6 @@ resource "aws_instance" "web_server_02" {
     encrypted             = true
     delete_on_termination = true
   }
-
-  user_data = <<-EOF
-    #!/bin/bash
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update -y
-    apt-get upgrade -y
-    apt-get install -y docker.io
-    systemctl start docker
-    systemctl enable docker
-    usermod -aG docker ubuntu
-  EOF
 
   tags = {
     Name = "sax-ec2-frontend-2"
@@ -135,17 +113,6 @@ resource "aws_instance" "backend_01" {
     delete_on_termination = true
   }
 
-  user_data = <<-EOF
-    #!/bin/bash
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update -y
-    apt-get upgrade -y
-    apt-get install -y docker.io
-    systemctl start docker
-    systemctl enable docker
-    usermod -aG docker ubuntu
-  EOF
-
   tags = {
     Name = "sax-ec2-backend-1"
   }
@@ -164,17 +131,6 @@ resource "aws_instance" "backend_02" {
     encrypted             = true
     delete_on_termination = true
   }
-
-  user_data = <<-EOF
-    #!/bin/bash
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update -y
-    apt-get upgrade -y
-    apt-get install -y docker.io
-    systemctl start docker
-    systemctl enable docker
-    usermod -aG docker ubuntu
-  EOF
 
   tags = {
     Name = "sax-ec2-backend-2"

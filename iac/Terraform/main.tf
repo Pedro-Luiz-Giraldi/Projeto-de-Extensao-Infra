@@ -1,5 +1,8 @@
 provider "aws" {
   region = var.aws_region
+
+  # Disables path-style/extra API inspections blocked by lab SCPs
+  s3_use_path_style = true
 }
 
 module "network" {

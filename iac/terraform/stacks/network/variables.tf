@@ -1,3 +1,9 @@
+variable "aws_region" {
+  description = "Regiao AWS onde os recursos serao provisionados"
+  type        = string
+  default     = "us-east-1"
+}
+
 variable "my_ip" {
   description = "Endereco IP em formato CIDR para liberacao de acesso administrativo (SSH/HTTP)"
   type        = string

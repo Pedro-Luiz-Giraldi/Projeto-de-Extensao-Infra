@@ -1,11 +1,7 @@
-variable "database_subnet_id" {
-  description = "ID da subnet privada dedicada ao banco de dados da stack network"
+variable "aws_region" {
+  description = "Regiao AWS onde os recursos serao provisionados"
   type        = string
-}
-
-variable "database_security_group_id" {
-  description = "ID do Security Group da stack network"
-  type        = string
+  default     = "us-east-1"
 }
 
 variable "instance_type" {
@@ -17,11 +13,6 @@ variable "instance_type" {
     condition     = contains(["t3.micro", "t3.small", "t3.medium"], var.instance_type)
     error_message = "Deve ser um tipo de instancia valido."
   }
-}
-
-variable "ami_id" {
-  description = "ID da AMI Ubuntu 26.04 a ser usada na instancia"
-  type        = string
 }
 
 variable "key_name" {

@@ -1,13 +1,19 @@
+provider "aws" {
+  region = var.aws_region
+
+  s3_use_path_style = true
+}
+
 # =========================================================
 # DATABASE INSTANCE (EC2 - Ubuntu 26.04 with native MySQL)
 # =========================================================
 
 resource "aws_instance" "database" {
-  ami                    = var.ami_id
+  ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   key_name               = var.key_name
-  subnet_id              = var.database_subnet_id
-  vpc_security_group_ids = [var.database_security_group_id]
+  subnet_id              = local.network.database_subnet_id
+  vpc_security_group_ids = [local.network.database_security_group_id]
 
   root_block_device {
     volume_size           = 20

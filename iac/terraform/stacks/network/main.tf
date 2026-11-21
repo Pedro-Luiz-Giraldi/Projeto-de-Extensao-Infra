@@ -1,3 +1,9 @@
+provider "aws" {
+  region = var.aws_region
+
+  s3_use_path_style = true
+}
+
 resource "aws_vpc" "principal" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true

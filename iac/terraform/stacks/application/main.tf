@@ -1,3 +1,7 @@
+provider "aws" {
+  region = var.aws_region
+}
+
 # =========================================================
 # APPLICATION LOAD BALANCER & TARGET GROUP
 # =========================================================
@@ -6,8 +10,8 @@ resource "aws_lb" "publico" {
   name               = "sax-alb"
   internal           = false
   load_balancer_type = "application"
-  subnets            = [var.public_subnet_1_id, var.public_subnet_2_id]
-  security_groups    = [var.alb_security_group_id]
+  subnets            = [local.network.public_subnet_1_id, local.network.public_subnet_2_id]
+  security_groups    = [local.network.alb_security_group_id]
 
   tags = {
     Name = "sax-alb"
@@ -18,7 +22,7 @@ resource "aws_lb_target_group" "web_servers" {
   name     = "sax-tg-frontend"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  vpc_id   = local.network.vpc_id
 
   health_check {
     path     = "/"
@@ -46,11 +50,11 @@ resource "aws_lb_listener" "http" {
 # =========================================================
 
 resource "aws_instance" "web_server_01" {
-  ami                    = var.ami_id
+  ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   key_name               = var.key_name
-  subnet_id              = var.public_subnet_1_id
-  vpc_security_group_ids = [var.web_server_security_group_id, var.swarm_security_group_id]
+  subnet_id              = local.network.public_subnet_1_id
+  vpc_security_group_ids = [local.network.web_server_security_group_id, local.network.swarm_security_group_id]
 
   root_block_device {
     volume_size           = 20
@@ -65,11 +69,11 @@ resource "aws_instance" "web_server_01" {
 }
 
 resource "aws_instance" "web_server_02" {
-  ami                    = var.ami_id
+  ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   key_name               = var.key_name
-  subnet_id              = var.public_subnet_2_id
-  vpc_security_group_ids = [var.web_server_security_group_id, var.swarm_security_group_id]
+  subnet_id              = local.network.public_subnet_2_id
+  vpc_security_group_ids = [local.network.web_server_security_group_id, local.network.swarm_security_group_id]
 
   root_block_device {
     volume_size           = 20
@@ -100,11 +104,11 @@ resource "aws_lb_target_group_attachment" "web_server_02" {
 # =========================================================
 
 resource "aws_instance" "backend_01" {
-  ami                    = var.ami_id
+  ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   key_name               = var.key_name
-  subnet_id              = var.private_subnet_1_id
-  vpc_security_group_ids = [var.backend_security_group_id, var.swarm_security_group_id]
+  subnet_id              = local.network.private_subnet_1_id
+  vpc_security_group_ids = [local.network.backend_security_group_id, local.network.swarm_security_group_id]
 
   root_block_device {
     volume_size           = 20
@@ -119,11 +123,11 @@ resource "aws_instance" "backend_01" {
 }
 
 resource "aws_instance" "backend_02" {
-  ami                    = var.ami_id
+  ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   key_name               = var.key_name
-  subnet_id              = var.private_subnet_2_id
-  vpc_security_group_ids = [var.backend_security_group_id, var.swarm_security_group_id]
+  subnet_id              = local.network.private_subnet_2_id
+  vpc_security_group_ids = [local.network.backend_security_group_id, local.network.swarm_security_group_id]
 
   root_block_device {
     volume_size           = 20

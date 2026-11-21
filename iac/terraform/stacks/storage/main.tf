@@ -1,18 +1,24 @@
+provider "aws" {
+  region = var.aws_region
+
+  s3_use_path_style = true
+}
+
 # =========================================================
-# S3 - LOGS
+# S3 - BACKUP
 # =========================================================
 
-resource "aws_s3_bucket" "logs" {
-  bucket = "sax-logs-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
+resource "aws_s3_bucket" "backup" {
+  bucket = "sax-backup-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
   object_lock_enabled = false
 
   tags = {
-    Name = "sax-s3-logs"
+    Name = "sax-s3-backup"
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "logs" {
-  bucket                  = aws_s3_bucket.logs.id
+resource "aws_s3_bucket_public_access_block" "backup" {
+  bucket                  = aws_s3_bucket.backup.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -24,7 +30,7 @@ resource "aws_s3_bucket_public_access_block" "logs" {
 # =========================================================
 
 resource "aws_s3_bucket" "bronze" {
-  bucket = "sax-bronze-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
+  bucket              = "sax-bronze-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
   object_lock_enabled = false
 
   tags = {
@@ -45,7 +51,7 @@ resource "aws_s3_bucket_public_access_block" "bronze" {
 # =========================================================
 
 resource "aws_s3_bucket" "silver" {
-  bucket = "sax-silver-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
+  bucket              = "sax-silver-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
   object_lock_enabled = false
 
   tags = {
@@ -66,7 +72,7 @@ resource "aws_s3_bucket_public_access_block" "silver" {
 # =========================================================
 
 resource "aws_s3_bucket" "gold" {
-  bucket = "sax-gold-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
+  bucket              = "sax-gold-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.region}"
   object_lock_enabled = false
 
   tags = {

@@ -1,0 +1,10 @@
+- name: Teste conexão
+  hosts: web_servers,app_servers
+  tasks:
+
+   - name: ping hosts
+     ansible.builtin.ping:
+
+   - name: print message
+     ansible.builtin.debug:
+       msg: hello world

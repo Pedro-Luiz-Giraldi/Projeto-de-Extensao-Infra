@@ -1,0 +1,57 @@
+name: sax
+services:
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command:
+      - "--config=/etc/otelcol/config.yaml"
+    volumes:
+      - ./otel-collector/config.yaml:/etc/otelcol/config.yaml
+    ports:
+      - "55679:55679"
+    expose:
+      - 55679
+    networks:
+      - sax-net
+
+  tempo:
+    image: grafana/tempo:3.0.2
+    command: ["-target=all", "-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo.yaml
+    networks:
+      - sax-net
+
+  loki:
+    image: grafana/loki:3.7.0
+    command: "-target=all -config.expand-env=true"
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml
+    ports:
+      - "3100:3100"
+    entrypoint:
+      - /usr/bin/loki
+      - -config.file=/etc/loki/local-config.yaml
+    networks:
+      - sax-net
+
+  prometheus:
+    image: prom/prometheus:v3
+    command: "--web.enable-otlp-receiver --config.file=/etc/prometheus.yaml"
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus.yaml
+    networks:
+      - sax-net
+
+  grafana:
+    image: grafana/grafana-enterprise
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - '3000:3000'
+    networks:
+      - sax-net
+
+networks:
+  sax-net:
+    driver: bridge

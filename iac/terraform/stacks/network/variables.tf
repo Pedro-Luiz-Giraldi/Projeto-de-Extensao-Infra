@@ -53,3 +53,9 @@ variable "private_subnet_cidrs" {
     error_message = "Devem ser informados exatamente 3 CIDRs de subnets privadas."
   }
 }
+
+variable "key_name" {
+  description = "Nome do KeyPair SSH usado por todas as instancias EC2"
+  type        = string
+  default     = "sax-ec2-key"
+}

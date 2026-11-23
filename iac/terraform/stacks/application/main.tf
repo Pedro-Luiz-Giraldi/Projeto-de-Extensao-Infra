@@ -52,7 +52,7 @@ resource "aws_lb_listener" "http" {
 resource "aws_instance" "web_server_01" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
-  key_name               = var.key_name
+  key_name               = local.network.key_name
   subnet_id              = local.network.public_subnet_1_id
   vpc_security_group_ids = [local.network.web_server_security_group_id, local.network.swarm_security_group_id]
 
@@ -71,7 +71,7 @@ resource "aws_instance" "web_server_01" {
 resource "aws_instance" "web_server_02" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
-  key_name               = var.key_name
+  key_name               = local.network.key_name
   subnet_id              = local.network.public_subnet_2_id
   vpc_security_group_ids = [local.network.web_server_security_group_id, local.network.swarm_security_group_id]
 
@@ -106,7 +106,7 @@ resource "aws_lb_target_group_attachment" "web_server_02" {
 resource "aws_instance" "backend_01" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
-  key_name               = var.key_name
+  key_name               = local.network.key_name
   subnet_id              = local.network.private_subnet_1_id
   vpc_security_group_ids = [local.network.backend_security_group_id, local.network.swarm_security_group_id]
 
@@ -125,7 +125,7 @@ resource "aws_instance" "backend_01" {
 resource "aws_instance" "backend_02" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
-  key_name               = var.key_name
+  key_name               = local.network.key_name
   subnet_id              = local.network.private_subnet_2_id
   vpc_security_group_ids = [local.network.backend_security_group_id, local.network.swarm_security_group_id]
 

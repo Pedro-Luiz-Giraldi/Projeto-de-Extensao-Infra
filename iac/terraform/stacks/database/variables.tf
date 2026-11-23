@@ -14,9 +14,3 @@ variable "instance_type" {
     error_message = "Deve ser um tipo de instancia valido."
   }
 }
-
-variable "key_name" {
-  description = "Nome do KeyPair para acesso SSH a instancia"
-  type        = string
-  default     = "vockey"
-}

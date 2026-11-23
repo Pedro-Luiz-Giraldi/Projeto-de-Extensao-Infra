@@ -11,7 +11,7 @@ provider "aws" {
 resource "aws_instance" "database" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
-  key_name               = var.key_name
+  key_name               = local.network.key_name
   subnet_id              = local.network.database_subnet_id
   vpc_security_group_ids = [local.network.database_security_group_id]
 

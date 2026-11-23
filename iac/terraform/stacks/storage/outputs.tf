@@ -1,11 +1,11 @@
 output "log_bucket_name" {
   description = "Nome do bucket utilizado para armazenamento de logs"
-  value       = aws_s3_bucket.logs.id
+  value       = aws_s3_bucket.backup.id
 }
 
 output "log_bucket_arn" {
   description = "ARN do bucket de logs"
-  value       = aws_s3_bucket.logs.arn
+  value       = aws_s3_bucket.backup.arn
 }
 
 output "bronze_bucket_name" {

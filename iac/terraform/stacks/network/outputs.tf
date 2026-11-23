@@ -52,3 +52,13 @@ output "swarm_security_group_id" {
   description = "Security Group do Docker Swarm"
   value       = aws_security_group.swarm.id
 }
+
+output "key_name" {
+  description = "Nome do KeyPair SSH usado por todas as instancias EC2"
+  value       = aws_key_pair.ec2.key_name
+}
+
+output "private_key_path" {
+  description = "Caminho local do arquivo da chave privada SSH"
+  value       = local.private_key_path
+}

@@ -3,13 +3,14 @@
   hosts: web_servers,app_servers
   become: true
   vars:
-    manager_ip: "{{ hostvars[groups['web_servers'][0]]['ansible_default_ipv4']['address'] }}"
+    manager_ip: "{{ hostvars[groups['web_servers'][0]]['ansible_facts']['default_ipv4']['address'] }}"
   tasks:
 
-    - name: install docker python sdk
+    - name: install python packages
       ansible.builtin.apt:
         name:
           - python3-docker
+          - python3-jsondiff
         state: present
         update_cache: true
 
@@ -18,8 +19,7 @@
         advertise_addr: "{{ manager_ip }}"
         default_addr_pool: 172.16.0.0/16
         state: present
-      delegate_to: "{{ groups['web_servers'][0] }}"
-      run_once: true
+      when: inventory_hostname == groups['web_servers'][0]
       register: swarm_info
 
     - name: join manager to swarm
@@ -37,3 +37,26 @@
         join_token: "{{ swarm_info.swarm_facts.JoinTokens.Worker }}"
         state: join
       when: inventory_hostname in groups['app_servers']
+
+
+
+    - name: copy compose file to manager
+      ansible.builtin.copy:
+        src: ./swarm.yml
+        dest: /opt/swarm.yml
+        mode: '0644'
+      when: inventory_hostname == groups['web_servers'][0]
+
+    - name: copy env file to manager
+      ansible.builtin.copy:
+        src: ../../.env
+        dest: /opt/.env
+        mode: '0644'
+      when: inventory_hostname == groups['web_servers'][0]
+
+    - name: deploy stack
+      community.docker.docker_stack:
+        state: present
+        name: sax
+        compose:
+          - /opt/swarm.yml

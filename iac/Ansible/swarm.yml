@@ -1,7 +1,7 @@
 services:
 
   db:
-    image: pedrogiraldi/sax-db:5.0
+    image: ${DB_IMG:-pedrogiraldi/sax-db:5.0}
     env_file:
       ./.env
     networks:
@@ -19,7 +19,7 @@ services:
         condition: on-failure
 
   back:
-    image: pedrogiraldi/sax-back:latest
+    image: ${BACK_IMG:-pedrogiraldi/sax-back:latest}
     env_file:
       ./.env
     ports:
@@ -36,7 +36,7 @@ services:
         condition: on-failure
 
   front:
-    image: pedrogiraldi/sax-front:latest
+    image: ${FRONT_IMG:-pedrogiraldi/sax-front:latest}
     env_file:
       ./.env
     ports:
@@ -77,7 +77,7 @@ services:
         condition: on-failure
 
   alertas:
-    image: pedrogiraldi/sax-alertas:latest
+    image: ${ALERTAS_IMG:-pedrogiraldi/sax-alertas:latest}
     env_file:
       ./.env
     ports:
@@ -94,7 +94,7 @@ services:
         condition: on-failure
 
   ia:
-    image: pedrogiraldi/sax-ia:latest
+    image: ${IA_IMG:-pedrogiraldi/sax-ia:latest}
     env_file:
       ./.env
     ports:

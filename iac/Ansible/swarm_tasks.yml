@@ -4,6 +4,8 @@
   become: true
   vars:
     manager_ip: "{{ hostvars[groups['web_servers'][0]]['ansible_facts']['default_ipv4']['address'] }}"
+    manager_token: "{{ hostvars[groups['web_servers'][0]].swarm_info.swarm_facts.JoinTokens.Manager }}"
+    worker_token: "{{ hostvars[groups['web_servers'][0]].swarm_info.swarm_facts.JoinTokens.Worker }}"
   tasks:
 
     - name: install python packages
@@ -26,7 +28,7 @@
       community.docker.docker_swarm:
         remote_addrs:
           - "{{ manager_ip }}"
-        join_token: "{{ swarm_info.swarm_facts.JoinTokens.Manager }}"
+        join_token: "{{ manager_token }}"
         state: join
       when: inventory_hostname == groups['web_servers'][1]
 
@@ -34,29 +36,6 @@
       community.docker.docker_swarm:
         remote_addrs:
           - "{{ manager_ip }}"
-        join_token: "{{ swarm_info.swarm_facts.JoinTokens.Worker }}"
+        join_token: "{{ worker_token }}"
         state: join
       when: inventory_hostname in groups['app_servers']
-
-
-
-    - name: copy compose file to manager
-      ansible.builtin.copy:
-        src: ./swarm.yml
-        dest: /opt/swarm.yml
-        mode: '0644'
-      when: inventory_hostname == groups['web_servers'][0]
-
-    - name: copy env file to manager
-      ansible.builtin.copy:
-        src: ../../.env
-        dest: /opt/.env
-        mode: '0644'
-      when: inventory_hostname == groups['web_servers'][0]
-
-    - name: deploy stack
-      community.docker.docker_stack:
-        state: present
-        name: sax
-        compose:
-          - /opt/swarm.yml

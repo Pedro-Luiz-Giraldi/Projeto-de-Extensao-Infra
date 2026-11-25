@@ -1,0 +1,35 @@
+---
+- name: deploy docker stack
+  hosts: web_servers
+  vars_files:
+    - ./images.yml
+
+  tasks:
+
+    - name: copy compose file to manager
+      ansible.builtin.copy:
+        src: ./swarm.yml
+        dest: /tmp/swarm.yml
+        mode: '0644'
+      when: inventory_hostname == groups['web_servers'][0]
+
+    - name: copy env file to manager
+      ansible.builtin.copy:
+        src: ../../.env
+        dest: /tmp/.env
+        mode: '0644'
+      when: inventory_hostname == groups['web_servers'][0]
+
+    - name: deploy stack
+      community.docker.docker_stack:
+        state: present
+        name: sax
+        compose:
+          - /tmp/swarm.yml
+      when: inventory_hostname == groups['web_servers'][0]
+      environment:
+        DB_IMG: "{{ images['sax-db'] }}"
+        BACK_IMG: "{{ images['sax-back'] }}"
+        FRONT_IMG: "{{ images['sax-front'] }}"
+        ALERTAS_IMG: "{{ images['sax-alertas'] }}"
+        IA_IMG: "{{ images['sax-ia'] }}"
